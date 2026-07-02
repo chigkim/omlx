@@ -11,11 +11,15 @@ import base64
 import binascii
 import hashlib
 import io
+import logging
 import math
+import os
 import struct
+import tempfile
 import threading
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional, Tuple
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from PIL import Image, ImageOps
 
@@ -44,6 +48,26 @@ def get_max_image_side_length() -> int:
     return settings.server.max_image_side_length
 
 
+logger = logging.getLogger(__name__)
+
+# Decoded payload cap for data:video/... URIs (~100 MiB).
+VIDEO_DECODED_SIZE_CAP = 100 * 1024 * 1024
+
+_VIDEO_MIME_SUFFIX = {
+    "video/mp4": ".mp4",
+    "video/webm": ".webm",
+    "video/quicktime": ".mov",
+    "video/x-matroska": ".mkv",
+}
+
+
+class TempVideoPath(str):
+    """Path to a decoded data-URL video written to a temporary file."""
+
+
+VideoReference = Union[str, bytes, Path, TempVideoPath]
+
+
 _IMAGE_INPUT_ERROR = (
     "Image inputs must be base64 data URIs "
     "(data:image/...;base64,...). Remote URLs and local file paths are not supported."
@@ -51,6 +75,10 @@ _IMAGE_INPUT_ERROR = (
 _AUDIO_INPUT_ERROR = (
     "input_audio.data must be a base64 string or base64 data URI. "
     "Local file paths are not supported."
+)
+_VIDEO_INPUT_ERROR = (
+    "Video inputs must be base64 data URIs "
+    "(data:video/...;base64,...). Remote URLs and local file paths are not supported."
 )
 
 
@@ -261,30 +289,103 @@ def _load_image_bytes(
     return rgb
 
 
-def extract_images_from_messages(
-    messages: List[Dict[str, Any]],
-) -> Tuple[List[Dict[str, Any]], List[Image.Image], List]:
-    """
-    Extract images and audio from OpenAI-format messages.
+def load_video_reference(
+    url_or_data: str, *, field: str = "video_url"
+) -> VideoReference:
+    """Decode an inline video data URI to a temporary local file.
 
-    Processes messages containing content arrays with image_url or input_audio
-    parts, loads the media, and returns cleaned text-only messages alongside
-    the loaded images and audio files.
+    Request-facing remote URLs and local file paths are rejected to preserve
+    the same SSRF/local-file-read boundary enforced for image inputs.
+    """
+    if not isinstance(url_or_data, str):
+        raise InvalidRequestError(_VIDEO_INPUT_ERROR, field=field)
+
+    stripped = url_or_data.strip()
+    if not stripped.startswith("data:"):
+        raise InvalidRequestError(_VIDEO_INPUT_ERROR, field=field)
+
+    header, separator, data_part = stripped.partition(",")
+    header_lower = header.lower()
+    if (
+        separator != ","
+        or not header_lower.startswith("data:video/")
+        or ";base64" not in header_lower
+    ):
+        raise InvalidRequestError(
+            f"{field} must use a base64 video data URI.",
+            field=field,
+        )
+
+    try:
+        video_bytes = base64.b64decode(data_part, validate=True)
+    except (binascii.Error, ValueError) as exc:
+        raise InvalidRequestError(
+            f"{field} contains invalid base64 data.",
+            field=field,
+        ) from exc
+
+    if len(video_bytes) > VIDEO_DECODED_SIZE_CAP:
+        cap_mib = VIDEO_DECODED_SIZE_CAP // (1024 * 1024)
+        raise InvalidRequestError(
+            f"Decoded video data too large: {len(video_bytes)} bytes "
+            f"exceeds {cap_mib} MiB cap",
+            field=field,
+        )
+
+    mime = header[5:].split(";", 1)[0].strip().lower()
+    suffix = _VIDEO_MIME_SUFFIX.get(mime, ".mp4")
+    fd, path = tempfile.mkstemp(prefix="omlx_video_", suffix=suffix)
+    try:
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(video_bytes)
+    except Exception:
+        os.unlink(path)
+        raise
+    return TempVideoPath(path)
+
+
+def cleanup_temp_video_paths(videos: List[VideoReference]) -> None:
+    """Delete temporary files created for decoded video data URIs."""
+    for video in videos:
+        if isinstance(video, TempVideoPath):
+            try:
+                os.unlink(video)
+            except FileNotFoundError:
+                pass
+            except OSError:
+                logger.debug(
+                    "Failed to delete temp video file %s", video, exc_info=True
+                )
+
+
+def extract_media_from_messages(
+    messages: List[Dict[str, Any]],
+    *,
+    materialize_videos: bool = True,
+) -> Tuple[List[Dict[str, Any]], List[Image.Image], List, List[VideoReference]]:
+    """
+    Extract images, audio, and videos from OpenAI-format messages.
+
+    Processes messages containing content arrays with image_url, video_url,
+    or input_audio parts, loads the media, and returns cleaned text-only
+    messages alongside the loaded media references.
 
     Args:
         messages: List of OpenAI-format chat messages. Each message may have
             content as a string or a list of content parts
-            (text/image_url/input_audio).
+            (text/image_url/video_url/input_audio).
 
     Returns:
-        Tuple of (text_messages, images, audio):
+        Tuple of (text_messages, images, audio, videos):
         - text_messages: Messages with media parts removed, text parts joined
         - images: List of loaded PIL Image objects in order of appearance
         - audio: List of BytesIO audio buffers
+        - videos: List of temporary file paths for ``prepare_inputs(videos=...)``
     """
     text_messages = []
     images = []
     audio = []
+    videos: List[VideoReference] = []
     pending_images = []
     with _image_decode_cache_lock:
         generation = _image_decode_cache_generation
@@ -373,7 +474,24 @@ def extract_images_from_messages(
                     else:
                         audio.append(data)
 
-            elif part_type in ("video", "video_url", "input_video"):
+            elif part_type == "video_url":
+                video_url_obj = (
+                    part.get("video_url")
+                    if isinstance(part, dict)
+                    else getattr(part, "video_url", None)
+                )
+                url = None
+                if isinstance(video_url_obj, str):
+                    url = video_url_obj
+                elif isinstance(video_url_obj, dict):
+                    url = video_url_obj.get("url")
+                elif video_url_obj is not None:
+                    url = getattr(video_url_obj, "url", None)
+
+                if url and materialize_videos:
+                    videos.append(load_video_reference(url))
+
+            elif part_type in ("video", "input_video"):
                 raise InvalidRequestError(
                     "Video input is not supported by oMLX.",
                     field="messages",
@@ -394,6 +512,34 @@ def extract_images_from_messages(
             img_bytes, field="image_url", generation=generation
         )
 
+    return text_messages, images, audio, videos
+
+
+def extract_images_from_messages(
+    messages: List[Dict[str, Any]],
+) -> Tuple[List[Dict[str, Any]], List[Image.Image], List]:
+    """
+    Extract images and audio from OpenAI-format messages.
+
+    Processes messages containing content arrays with image_url or input_audio
+    parts, loads the media, and returns cleaned text-only messages alongside
+    the loaded images and audio files. Video parts are stripped from text
+    messages but not returned (see :func:`extract_media_from_messages`).
+
+    Args:
+        messages: List of OpenAI-format chat messages. Each message may have
+            content as a string or a list of content parts
+            (text/image_url/input_audio).
+
+    Returns:
+        Tuple of (text_messages, images, audio):
+        - text_messages: Messages with media parts removed, text parts joined
+        - images: List of loaded PIL Image objects in order of appearance
+        - audio: List of BytesIO/str audio references for load_audio()
+    """
+    text_messages, images, audio, _videos = extract_media_from_messages(
+        messages, materialize_videos=False
+    )
     return text_messages, images, audio
 
 

@@ -3,6 +3,7 @@
 
 import base64
 import io
+import os
 import struct
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier, Event
@@ -13,10 +14,13 @@ from PIL import Image
 
 from omlx.exceptions import InvalidRequestError
 from omlx.utils.image import (
+    TempVideoPath,
     compute_image_hash,
     compute_per_image_hashes,
     extract_images_from_messages,
+    extract_media_from_messages,
     load_image,
+    load_video_reference,
 )
 
 # =============================================================================
@@ -422,15 +426,17 @@ class TestExtractImagesFromMessages:
         assert "Describe this image and audio" in text_msgs[0]["content"]
 
 
-def test_video_input_is_rejected():
+@pytest.mark.parametrize("part_type", ["video", "input_video"])
+def test_unsupported_video_part_types_are_rejected(part_type):
+    """Only video_url is supported; other video part types still raise."""
     messages = [
         {
             "role": "user",
             "content": [
                 {"type": "text", "text": "Describe"},
                 {
-                    "type": "video_url",
-                    "video_url": {
+                    "type": part_type,
+                    part_type: {
                         "url": "data:video/mp4;base64,AAAA",
                         "fps": 3,
                     },
@@ -441,6 +447,129 @@ def test_video_input_is_rejected():
 
     with pytest.raises(InvalidRequestError, match="Video input is not supported"):
         extract_images_from_messages(messages)
+
+
+# =============================================================================
+# Tests: extract_media_from_messages (video)
+# =============================================================================
+
+
+class TestExtractMediaFromMessagesVideo:
+    """Tests for video_url extraction via extract_media_from_messages()."""
+
+    def test_video_url_data_uri_extracts_temp_file(self):
+        """Data URI video decodes to a temp file with matching bytes."""
+        payload = b"fake-mp4-bytes"
+        uri = "data:video/mp4;base64," + base64.b64encode(payload).decode("ascii")
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "video_url", "video_url": {"url": uri}},
+                    {"type": "text", "text": "Describe this clip"},
+                ],
+            },
+        ]
+
+        text_msgs, images, audio, videos = extract_media_from_messages(messages)
+
+        assert len(videos) == 1
+        assert len(images) == 0
+        assert len(audio) == 0
+        assert text_msgs[0]["content"] == "Describe this clip"
+        video_path = videos[0]
+        assert isinstance(video_path, TempVideoPath)
+        assert os.path.exists(video_path)
+        try:
+            with open(video_path, "rb") as handle:
+                assert handle.read() == payload
+        finally:
+            if os.path.exists(video_path):
+                os.unlink(video_path)
+
+    def test_video_url_string_form_extracts(self):
+        """String-form inline video decodes and strips the media part."""
+        payload = b"fake-webm-bytes"
+        uri = "data:video/webm;base64," + base64.b64encode(payload).decode("ascii")
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "video_url", "video_url": uri},
+                    {"type": "text", "text": "What happens?"},
+                ],
+            },
+        ]
+
+        text_msgs, images, audio, videos = extract_media_from_messages(messages)
+
+        assert len(videos) == 1
+        assert isinstance(videos[0], TempVideoPath)
+        assert text_msgs[0]["content"] == "What happens?"
+        try:
+            with open(videos[0], "rb") as handle:
+                assert handle.read() == payload
+        finally:
+            if os.path.exists(videos[0]):
+                os.unlink(videos[0])
+
+    def test_video_url_rejects_local_file_path(self):
+        """Local file paths are rejected at the request boundary."""
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "video_url",
+                        "video_url": {"url": "/tmp/local_clip.mp4"},
+                    },
+                ],
+            },
+        ]
+
+        with pytest.raises(InvalidRequestError):
+            extract_media_from_messages(messages)
+
+    def test_video_url_rejects_http_without_fetching(self):
+        """HTTP URLs are rejected without server-side fetching."""
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "video_url",
+                        "video_url": {"url": "https://example.com/a.mp4"},
+                    },
+                ],
+            },
+        ]
+
+        with patch("urllib.request.urlopen") as mock_urlopen:
+            with pytest.raises(InvalidRequestError):
+                extract_media_from_messages(messages)
+
+        mock_urlopen.assert_not_called()
+
+    def test_video_url_invalid_base64_raises(self):
+        """Malformed base64 in a video data URI raises a request error."""
+        with pytest.raises(
+            InvalidRequestError, match=r"(?i)video.*base64|base64.*video"
+        ):
+            load_video_reference("data:video/mp4;base64,%%%")
+
+    def test_video_url_decoded_cap_raises(self, monkeypatch):
+        """Oversize decoded video payloads raise a request error mentioning the cap."""
+        monkeypatch.setattr(
+            "omlx.utils.image.VIDEO_DECODED_SIZE_CAP",
+            4,
+        )
+        payload = b"12345"
+        uri = "data:video/mp4;base64," + base64.b64encode(payload).decode("ascii")
+        with pytest.raises(InvalidRequestError) as exc_info:
+            load_video_reference(uri)
+        message = str(exc_info.value).lower()
+        assert "video" in message
+        assert "100" in message or "cap" in message or "too large" in message
 
 
 # =============================================================================
