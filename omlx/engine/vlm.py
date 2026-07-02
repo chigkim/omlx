@@ -5,7 +5,7 @@ VLM (Vision-Language Model) engine with continuous batching.
 This engine extends BatchedEngine to support vision-language models via
 mlx-vlm. It provides:
 
-- Image input processing (URL, base64, local file)
+- Inline image and video input processing (base64 data URIs)
 - Multi-image chat support
 - Pre-computed vision embeddings for efficient batched inference
 - Full compatibility with oMLX's tiered KV cache and boundary snapshots
@@ -52,9 +52,11 @@ from ..models.vlm import VLMModelAdapter
 from ..patches.mlx_vlm_pixtral_torch_free import apply_pixtral_torch_free_patch
 from ..reasoning_effort import apply_chat_template_with_reasoning_effort_fallback
 from ..utils.image import (
+    cleanup_temp_video_paths,
     compute_image_hash,
     compute_per_image_hashes,
     extract_images_from_messages,
+    extract_media_from_messages,
 )
 from ..utils.video import expand_video_parts
 from .base import (
@@ -316,6 +318,34 @@ def _patch_video_processor_bug():
         pass
 
     _video_processor_patched = True
+
+
+def _attach_torch_free_video_processor(processor) -> None:
+    """Attach a numpy/PIL video processor shim for Qwen3-VL when missing."""
+    if processor is None:
+        return
+
+    cls_name = processor.__class__.__name__
+    existing_vp = getattr(processor, "video_processor", None)
+    if existing_vp is not None:
+        return
+
+    is_qwen3_vl = cls_name == "Qwen3VLProcessor"
+    has_video_token = getattr(processor, "video_token", None) is not None
+    if not is_qwen3_vl and not has_video_token:
+        return
+
+    image_processor = getattr(processor, "image_processor", None)
+    if image_processor is None:
+        return
+
+    try:
+        from ..utils.video import TorchFreeQwen3VLVideoProcessor
+
+        processor.video_processor = TorchFreeQwen3VLVideoProcessor(image_processor)
+        logger.debug("Attached torch-free Qwen3-VL video processor shim")
+    except Exception as exc:
+        logger.warning("Failed to attach torch-free video processor shim: %s", exc)
 
 
 _torch_free_ip_patched = False
@@ -1497,6 +1527,10 @@ def _grid_image_token_starts(
 # processor is loaded.
 _IMAGE_TOKEN_UPPER_BOUND_FALLBACK = 1280
 
+# Conservative per-video placeholder budget for preflight when exact counts
+# are unavailable. Videos expand to many more tokens than a single image.
+_VIDEO_TOKEN_UPPER_BOUND_FALLBACK = 8192
+
 
 def _derive_image_token_upper_bound(processor: Any) -> int:
     """Derive the per-image token upper bound from the processor config.
@@ -1563,9 +1597,31 @@ def _count_image_tokens(
     return image_parts * per_image_upper_bound
 
 
+def _count_video_tokens(
+    messages: list[dict[str, Any]],
+    per_video_upper_bound: int = _VIDEO_TOKEN_UPPER_BOUND_FALLBACK,
+) -> int:
+    """Count video_url content parts and return a conservative token budget."""
+    video_parts = 0
+    for msg in messages:
+        content = msg.get("content")
+        if not isinstance(content, list):
+            continue
+        for part in content:
+            if not isinstance(part, dict):
+                continue
+            if part.get("type") == "video_url":
+                video_parts += 1
+    return video_parts * per_video_upper_bound
+
+
 def _smart_resize_tokens(
-    h: int, w: int, patch_size: int, merge_size: int,
-    min_pixels: int, max_pixels: int,
+    h: int,
+    w: int,
+    patch_size: int,
+    merge_size: int,
+    min_pixels: int,
+    max_pixels: int,
 ) -> int:
     """Real merged-token count for one image of pixel size (h, w), mirroring
     the Qwen image processor's ``smart_resize`` -> grid_thw ->
@@ -1587,7 +1643,7 @@ def _smart_resize_tokens(
         beta = math.sqrt(min_pixels / (h * w))
         h_bar = math.ceil(h * beta / factor) * factor
         w_bar = math.ceil(w * beta / factor) * factor
-    return (h_bar // patch_size) * (w_bar // patch_size) // (merge_size ** 2)
+    return (h_bar // patch_size) * (w_bar // patch_size) // (merge_size**2)
 
 
 def _read_image_dims(part: dict) -> Optional[tuple]:
@@ -2200,6 +2256,7 @@ class VLMBatchedEngine(BaseEngine):
             logger.warning("Qwen packed 4-bit projections not applied", exc_info=True)
 
         _fix_processor_none_pixels(self._processor)
+        _attach_torch_free_video_processor(self._processor)
         self._diffusion_family = self._detect_diffusion_family()
         if self.is_diffusion_model:
             logger.info(
@@ -2598,9 +2655,7 @@ class VLMBatchedEngine(BaseEngine):
 
                 apply_qwen35_moe_weighted_sum_patch()
             except Exception:
-                logger.debug(
-                    "Qwen MoE weighted-sum patch not applied", exc_info=True
-                )
+                logger.debug("Qwen MoE weighted-sum patch not applied", exc_info=True)
 
         if (
             getattr(self._model_settings, "qwen35_ragged_decode_fallback_enabled", True)
@@ -2904,8 +2959,10 @@ class VLMBatchedEngine(BaseEngine):
         messages: list[dict[str, Any]],
         num_images: int,
         num_audios: int = 0,
+        num_videos: int = 0,
+        videos: list[Any] | None = None,
     ) -> tuple[list[dict[str, Any]], list[tuple[int, int]]]:
-        """Format VLM messages with image/audio tokens on media-bearing user turns."""
+        """Format VLM messages with image/audio/video tokens on user turns."""
         from mlx_vlm.prompt_utils import extract_text_from_content, get_message_json
 
         model_type = self.model_type or getattr(
@@ -2923,6 +2980,7 @@ class VLMBatchedEngine(BaseEngine):
 
         image_part_types = {"image", "image_url", "input_image"}
         audio_part_types = {"input_audio"}
+        video_part_types = {"video_url"}
         has_explicit_images = any(
             isinstance(msg, dict)
             and self._count_content_parts(msg.get("content"), image_part_types) > 0
@@ -2935,10 +2993,20 @@ class VLMBatchedEngine(BaseEngine):
             for msg in messages
         )
 
+        has_explicit_videos = any(
+            isinstance(msg, dict)
+            and self._count_content_parts(msg.get("content"), video_part_types) > 0
+            for msg in messages
+        )
+
         remaining_images = num_images
         remaining_audios = num_audios
+        remaining_videos = num_videos
         assigned_fallback_images = False
         assigned_fallback_audios = False
+        assigned_fallback_videos = False
+        videos_consumed = 0
+        video_refs = [str(v) for v in (videos or [])]
         formatted_messages: list[dict[str, Any]] = []
         image_message_ranges: list[tuple[int, int]] = []
 
@@ -2952,12 +3020,17 @@ class VLMBatchedEngine(BaseEngine):
 
             msg_num_images = 0
             msg_num_audios = 0
+            msg_num_videos = 0
+            msg_video_refs: list[str] = []
             if role == "user":
                 explicit_images = self._count_content_parts(
                     raw_content, image_part_types
                 )
                 explicit_audios = self._count_content_parts(
                     raw_content, audio_part_types
+                )
+                explicit_videos = self._count_content_parts(
+                    raw_content, video_part_types
                 )
                 if explicit_images > 0 and remaining_images > 0:
                     msg_num_images = min(explicit_images, remaining_images)
@@ -2982,6 +3055,24 @@ class VLMBatchedEngine(BaseEngine):
                     msg_num_audios = remaining_audios
                     remaining_audios = 0
                     assigned_fallback_audios = True
+
+                if explicit_videos > 0 and remaining_videos > 0:
+                    msg_num_videos = min(explicit_videos, remaining_videos)
+                    remaining_videos -= msg_num_videos
+                elif (
+                    not has_explicit_videos
+                    and remaining_videos > 0
+                    and not assigned_fallback_videos
+                ):
+                    msg_num_videos = remaining_videos
+                    remaining_videos = 0
+                    assigned_fallback_videos = True
+
+                if msg_num_videos > 0:
+                    msg_video_refs = video_refs[
+                        videos_consumed : videos_consumed + msg_num_videos
+                    ]
+                    videos_consumed += msg_num_videos
 
             if msg_num_images > 0:
                 image_message_ranges.append((idx, msg_num_images))
@@ -3108,14 +3199,23 @@ class VLMBatchedEngine(BaseEngine):
                     {"role": role, "content": "".join(mimo_content)}
                 )
             else:
+                message_kwargs: dict[str, Any] = {
+                    "skip_image_token": role != "user" or msg_num_images == 0,
+                    "skip_audio_token": role != "user" or msg_num_audios == 0,
+                    "num_images": msg_num_images,
+                    "num_audios": msg_num_audios,
+                }
+                if msg_num_videos > 0 and msg_video_refs:
+                    message_kwargs["video"] = (
+                        msg_video_refs[0]
+                        if len(msg_video_refs) == 1
+                        else msg_video_refs
+                    )
                 formatted = get_message_json(
                     model_type,
                     content,
                     role,
-                    skip_image_token=role != "user" or msg_num_images == 0,
-                    skip_audio_token=role != "user" or msg_num_audios == 0,
-                    num_images=msg_num_images,
-                    num_audios=msg_num_audios,
+                    **message_kwargs,
                 )
                 # Collapse text-only list content to plain string so that
                 # simplified chat templates (without render_content macro)
@@ -3175,8 +3275,7 @@ class VLMBatchedEngine(BaseEngine):
                         )
                     except TypeError:
                         logger.debug(
-                            "encode_image rejected image metadata; "
-                            "retrying without it",
+                            "encode_image rejected image metadata; retrying without it",
                             exc_info=True,
                         )
                 else:
@@ -3208,7 +3307,10 @@ class VLMBatchedEngine(BaseEngine):
                             inspect.Parameter.POSITIONAL_OR_KEYWORD,
                         )
                     ]
-                    if image_position_ids is not None and len(positional_parameters) >= 2:
+                    if (
+                        image_position_ids is not None
+                        and len(positional_parameters) >= 2
+                    ):
                         return model.encode_image(pixel_values, image_position_ids)
 
             return model.encode_image(pixel_values)
@@ -3216,6 +3318,8 @@ class VLMBatchedEngine(BaseEngine):
         # Strategy 2: qwen-style (vision_tower + grid_thw)
         if model_type in _QWEN_VISION_MODELS:
             grid_thw = extra_model_inputs.get("image_grid_thw")
+            if grid_thw is None:
+                grid_thw = extra_model_inputs.get("video_grid_thw")
             if grid_thw is None:
                 return None
             dtype = model.vision_tower.patch_embed.proj.weight.dtype
@@ -3443,6 +3547,7 @@ class VLMBatchedEngine(BaseEngine):
         messages: list[dict[str, Any]],
         images: list[Any],
         audio: list | None = None,
+        videos: list[Any] | None = None,
         chat_template_kwargs: dict[str, Any] | None = None,
         tools: list[dict] | None = None,
         is_partial: bool | None = None,
@@ -3486,20 +3591,58 @@ class VLMBatchedEngine(BaseEngine):
             - image_cache_key_start: Token index where media-aware keying begins
             - image_cache_key_ranges: Media boundaries with cumulative hashes
         """
+        video_list = videos or []
+        try:
+            return self._prepare_vision_inputs_impl(
+                messages=messages,
+                images=images,
+                audio=audio,
+                videos=video_list,
+                chat_template_kwargs=chat_template_kwargs,
+                tools=tools,
+                is_partial=is_partial,
+            )
+        finally:
+            cleanup_temp_video_paths(video_list)
+
+    def _prepare_vision_inputs_impl(
+        self,
+        messages: list[dict[str, Any]],
+        images: list[Any],
+        audio: list | None,
+        videos: list[Any],
+        chat_template_kwargs: dict[str, Any] | None,
+        tools: list[dict] | None,
+        is_partial: bool | None = None,
+    ) -> Tuple[
+        List[int],
+        Optional[mx.array],
+        Optional[Dict[str, Any]],
+        Optional[str],
+        int,
+        List[Tuple[int, str]],
+    ]:
         from mlx_vlm.prompt_utils import apply_chat_template, get_chat_template
         from mlx_vlm.utils import load_audio as _load_audio
         from mlx_vlm.utils import prepare_inputs
 
         num_images = len(images)
         num_audios = len(audio) if audio else 0
+        num_videos = len(videos)
+
+        if num_images > 0 and num_videos > 0:
+            raise InvalidRequestError(
+                "Simultaneous image and video input is not supported.",
+                field="messages",
+            )
 
         model_type = self.model_type or _read_config_model_type(self._model_name) or ""
         if model_type == COHERE2_MOE_MODEL_TYPE and (
-            num_images > 0 or num_audios > 0
+            num_images > 0 or num_audios > 0 or num_videos > 0
         ):
             raise InvalidRequestError(
                 "Cohere2 MoE is a text-only model and does not support "
-                "image or audio input.",
+                "image, video, or audio input.",
                 field="messages",
             )
         if model_type == QWEN4_EXP_MODEL_TYPE and num_audios > 0:
@@ -3546,6 +3689,8 @@ class VLMBatchedEngine(BaseEngine):
                     messages,
                     num_images=num_images,
                     num_audios=num_audios,
+                    num_videos=num_videos,
+                    videos=videos,
                 )
             )
         except Exception as e:
@@ -3646,17 +3791,26 @@ class VLMBatchedEngine(BaseEngine):
                 **template_kwargs,
             )
 
-        # Tokenize text and preprocess images and audio
+        # Tokenize text and preprocess images, videos, and audio
         inputs = prepare_inputs(
             self._processor,
             images=images if images else None,
+            videos=[str(v) for v in videos] if videos else None,
             audio=audio if audio else None,
             prompts=[prompt] if isinstance(prompt, str) else prompt,
         )
 
         input_ids = inputs["input_ids"]
         pixel_values = inputs.get("pixel_values")
+        pixel_values_videos = inputs.get("pixel_values_videos")
         attention_mask = inputs.get("attention_mask")
+        vision_pixel_values = pixel_values
+        if (
+            vision_pixel_values is None
+            and pixel_values_videos is not None
+            and num_videos > 0
+        ):
+            vision_pixel_values = pixel_values_videos
 
         token_ids = input_ids[0].tolist() if input_ids.ndim > 1 else input_ids.tolist()
         image_cache_key_start = 0
@@ -3775,12 +3929,17 @@ class VLMBatchedEngine(BaseEngine):
             and v is not None
         }
 
-        # Check for any multimodal inputs. Most processors expose audio as
-        # ``input_features``; MiMo's tokenizer produces discrete ``audio_codes``.
+        # Check for any multimodal inputs: images, videos, or audio. Most
+        # processors expose audio as ``input_features``; MiMo's tokenizer
+        # produces discrete ``audio_codes``.
         has_audio = any(
             key in extra_model_inputs for key in ("input_features", "audio_codes")
         )
-        has_multimodal = (pixel_values is not None and num_images > 0) or has_audio
+        has_multimodal = (
+            (pixel_values is not None and num_images > 0)
+            or (pixel_values_videos is not None and num_videos > 0)
+            or has_audio
+        )
 
         if has_multimodal:
             # Build call kwargs from extra_model_inputs (includes input_features
@@ -3796,6 +3955,7 @@ class VLMBatchedEngine(BaseEngine):
 
             if (
                 num_images > 0
+                and num_videos == 0
                 and self._vision_cache is not None
                 and self._vision_cache_enabled
             ):
@@ -3854,7 +4014,7 @@ class VLMBatchedEngine(BaseEngine):
                     # Some or all uncached — compute all, then cache per-image
                     try:
                         features = self._compute_vision_features(
-                            pixel_values, extra_model_inputs
+                            vision_pixel_values, extra_model_inputs
                         )
                         if (
                             features is not None
@@ -3903,7 +4063,10 @@ class VLMBatchedEngine(BaseEngine):
             # expect it as a positional/keyword arg named 'mask'.
             try:
                 embed_features = self._vlm_model.get_input_embeddings(
-                    input_ids, pixel_values, mask=attention_mask, **call_kwargs
+                    input_ids,
+                    vision_pixel_values,
+                    mask=attention_mask,
+                    **call_kwargs,
                 )
             except TypeError:
                 # cached_image_features kwarg not supported — disable and retry
@@ -3916,7 +4079,10 @@ class VLMBatchedEngine(BaseEngine):
                     self._vision_cache_enabled = False
                     call_kwargs.pop("cached_image_features")
                     embed_features = self._vlm_model.get_input_embeddings(
-                        input_ids, pixel_values, mask=attention_mask, **call_kwargs
+                        input_ids,
+                        vision_pixel_values,
+                        mask=attention_mask,
+                        **call_kwargs,
                     )
                 else:
                     raise
@@ -4532,7 +4698,9 @@ class VLMBatchedEngine(BaseEngine):
         model_type = self.model_type or _read_config_model_type(self._model_name)
         if model_type in {"mimo_v2", "mimo_v2_flash"}:
             media_messages = expand_video_parts(messages)
-        text_messages, images, _ = extract_images_from_messages(media_messages)
+        text_messages, images, _, _ = extract_media_from_messages(
+            media_messages, materialize_videos=False
+        )
         if (
             images
             and self.model_type in {"gemma4", "gemma4_unified"}
@@ -4574,7 +4742,8 @@ class VLMBatchedEngine(BaseEngine):
                 getattr(self, "_processor", None)
             ),
         )
-        num_tokens += image_tokens
+        video_tokens = _count_video_tokens(messages)
+        num_tokens += image_tokens + video_tokens
         scheduler = getattr(getattr(self._engine, "engine", None), "scheduler", None)
         if scheduler is None:
             _warn_scheduler_unreachable_once(self, "preflight_chat")
@@ -4583,7 +4752,7 @@ class VLMBatchedEngine(BaseEngine):
             scheduler,
             num_prompt_tokens=num_tokens,
             request_id=request_id,
-            text_only=image_tokens == 0,
+            text_only=image_tokens == 0 and video_tokens == 0,
         )
 
     async def preflight_completion(
@@ -4789,38 +4958,45 @@ class VLMBatchedEngine(BaseEngine):
         if model_type in {"mimo_v2", "mimo_v2_flash"}:
             media_messages = expand_video_parts(messages)
 
-        text_messages, images, audio = extract_images_from_messages(media_messages)
-
-        ct_kwargs = kwargs.pop("chat_template_kwargs", None)
-        partial = kwargs.pop("is_partial", None)
-
-        # Keep VLM-capable models on one prompt-rendering path, even before the
-        # first image arrives. Otherwise the conversation switches prompt families
-        # on the first image-bearing turn and invalidates early prefix blocks.
-        if images:
-            vlm_messages = self._apply_ocr_prompt(media_messages)
-        elif audio and model_type in {"mimo_v2", "mimo_v2_flash"}:
-            vlm_messages = media_messages
-        else:
-            vlm_messages = text_messages
-        template_tools = convert_tools_for_template(tools) if tools else None
-        (
-            token_ids,
-            vlm_embeds,
-            vlm_kwargs,
-            image_hash,
-            image_cache_key_start,
-            image_cache_key_ranges,
-        ) = self._prepare_vision_inputs(
-            vlm_messages,
-            images,
-            audio=audio if audio else None,
-            chat_template_kwargs=ct_kwargs,
-            tools=template_tools,
-            is_partial=partial,
+        # Extract media from messages. Keep cleanup armed across prompt/tool
+        # formatting too, before _prepare_vision_inputs takes ownership.
+        text_messages, images, audio, videos = extract_media_from_messages(
+            media_messages
         )
+        try:
+            ct_kwargs = kwargs.pop("chat_template_kwargs", None)
+            partial = kwargs.pop("is_partial", None)
 
-        if images:
+            # Keep VLM-capable models on one prompt-rendering path, even before the
+            # first image arrives. Otherwise the conversation switches prompt families
+            # on the first image-bearing turn and invalidates early prefix blocks.
+            if images:
+                vlm_messages = self._apply_ocr_prompt(media_messages)
+            elif audio and model_type in {"mimo_v2", "mimo_v2_flash"}:
+                vlm_messages = media_messages
+            else:
+                vlm_messages = text_messages
+            template_tools = convert_tools_for_template(tools) if tools else None
+            (
+                token_ids,
+                vlm_embeds,
+                vlm_kwargs,
+                image_hash,
+                image_cache_key_start,
+                image_cache_key_ranges,
+            ) = self._prepare_vision_inputs(
+                vlm_messages,
+                images,
+                audio=audio if audio else None,
+                videos=videos if videos else None,
+                chat_template_kwargs=ct_kwargs,
+                tools=template_tools,
+                is_partial=partial,
+            )
+        finally:
+            cleanup_temp_video_paths(videos)
+
+        if images or videos:
             # Free Metal intermediates from vision encoding.
             mx.synchronize()
             mx.clear_cache()
