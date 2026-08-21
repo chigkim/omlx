@@ -9,12 +9,16 @@
                         <div class="flex flex-wrap items-center gap-2">
                             <!-- Scope toggle -->
                             <div class="flex rounded-lg border border-neutral-200 overflow-hidden">
-                                <button @click="statsScope = 'session'; showClearStatsConfirm = false; showClearAlltimeConfirm = false"
+                                <button type="button"
+                                        x-a11y-pressed="statsScope === 'session'"
+                                        @click="statsScope = 'session'; showClearStatsConfirm = false; showClearAlltimeConfirm = false"
                                         :class="statsScope === 'session' ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-500 hover:bg-neutral-50'"
                                         class="px-3 py-1.5 text-xs font-medium transition-all">
                                     {{ t('status.scope_session') }}
                                 </button>
-                                <button @click="statsScope = 'alltime'; showClearStatsConfirm = false; showClearAlltimeConfirm = false"
+                                <button type="button"
+                                        x-a11y-pressed="statsScope === 'alltime'"
+                                        @click="statsScope = 'alltime'; showClearStatsConfirm = false; showClearAlltimeConfirm = false"
                                         :class="statsScope === 'alltime' ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-500 hover:bg-neutral-50'"
                                         class="px-3 py-1.5 text-xs font-medium transition-all border-l border-neutral-200">
                                     {{ t('status.scope_alltime') }}
@@ -268,6 +272,7 @@
                                                  x-data="{ showTip: false }"
                                                  @mouseenter="showTip = true" @mouseleave="showTip = false">
                                                 <button @click="unloadModel(m.id)"
+                                                        aria-label="{{ t('status.active_models.unload') }}"
                                                         class="p-1 rounded-md text-neutral-300 hover:text-red-500 hover:bg-red-50 transition-all">
                                                     <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
                                                 </button>
@@ -677,7 +682,8 @@
                                             @click="copyToClipboard('http://' + displayHost + ':' + stats.port + '/v1'); copied = true; setTimeout(() => copied = false, 2000)"
                                             class="p-1.5 rounded-lg transition-all"
                                             :class="copied ? 'text-green-500' : 'text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100'"
-                                            :title="window.t('status.api.copy_tooltip')">
+                                            :title="window.t('status.api.copy_tooltip')"
+                                            aria-label="{{ t('status.api.copy_tooltip') }}: {{ t('status.api.openai') }}">
                                         <svg x-show="!copied" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                                         <svg x-show="copied" x-cloak class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                                     </button>
@@ -692,7 +698,8 @@
                                             @click="copyToClipboard('http://' + displayHost + ':' + stats.port); copied = true; setTimeout(() => copied = false, 2000)"
                                             class="p-1.5 rounded-lg transition-all"
                                             :class="copied ? 'text-green-500' : 'text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100'"
-                                            :title="window.t('status.api.copy_tooltip')">
+                                            :title="window.t('status.api.copy_tooltip')"
+                                            aria-label="{{ t('status.api.copy_tooltip') }}: {{ t('status.api.claude') }}">
                                         <svg x-show="!copied" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                                         <svg x-show="copied" x-cloak class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                                     </button>
@@ -716,6 +723,8 @@
                                     <label class="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2">{{ t('status.claude_code.mode') }}</label>
                                     <div class="flex items-center gap-3">
                                         <button type="button"
+                                                x-a11y-switch="globalSettings.claude_code.mode === 'local'"
+                                                :aria-label="window.t('status.claude_code.mode_local')"
                                                 @click="globalSettings.claude_code.mode = (globalSettings.claude_code.mode === 'cloud' ? 'local' : 'cloud'); saveClaudeCodeSettings()"
                                                 :class="globalSettings.claude_code.mode === 'local' ? 'bg-neutral-900' : 'bg-neutral-200'"
                                                 class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200">
@@ -736,7 +745,8 @@
                                                 @click="copyToClipboard(claudeCodeCommand); copied = true; setTimeout(() => copied = false, 2000)"
                                                 class="absolute top-2.5 right-2.5 p-1.5 rounded-md transition-all opacity-0 group-hover:opacity-100"
                                                 :class="copied ? 'text-green-500 opacity-100' : 'bg-white/80 text-neutral-400 hover:text-neutral-700'"
-                                                :title="window.t('status.claude_code.copy_command_tooltip')">
+                                                :title="window.t('status.claude_code.copy_command_tooltip')"
+                                                aria-label="{{ t('status.claude_code.copy_command_tooltip') }}">
                                             <svg x-show="!copied" class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                                             <svg x-show="copied" x-cloak class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                                         </button>
@@ -755,8 +765,8 @@
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <!-- Opus tier -->
                                     <div>
-                                        <label class="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">{{ t('status.claude_code.opus_tier') }}</label>
-                                        <select x-model="globalSettings.claude_code.opus_model"
+                                        <label for="status-claude-code-opus-tier" class="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">{{ t('status.claude_code.opus_tier') }}</label>
+                                        <select id="status-claude-code-opus-tier" x-model="globalSettings.claude_code.opus_model"
                                                 @change="globalSettings.claude_code.opus_model = globalSettings.claude_code.opus_model || null; saveClaudeCodeSettings()"
                                                 class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg bg-white focus:ring-2 focus:ring-neutral-900 focus:border-neutral-900 transition-all">
                                             <option value="">{{ t('status.claude_code.select_model') }}</option>
@@ -773,8 +783,8 @@
                                     </div>
                                     <!-- Sonnet tier -->
                                     <div>
-                                        <label class="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">{{ t('status.claude_code.sonnet_tier') }}</label>
-                                        <select x-model="globalSettings.claude_code.sonnet_model"
+                                        <label for="status-claude-code-sonnet-tier" class="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">{{ t('status.claude_code.sonnet_tier') }}</label>
+                                        <select id="status-claude-code-sonnet-tier" x-model="globalSettings.claude_code.sonnet_model"
                                                 @change="globalSettings.claude_code.sonnet_model = globalSettings.claude_code.sonnet_model || null; saveClaudeCodeSettings()"
                                                 class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg bg-white focus:ring-2 focus:ring-neutral-900 focus:border-neutral-900 transition-all">
                                             <option value="">{{ t('status.claude_code.select_model') }}</option>
@@ -791,8 +801,8 @@
                                     </div>
                                     <!-- Haiku tier -->
                                     <div>
-                                        <label class="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">{{ t('status.claude_code.haiku_tier') }}</label>
-                                        <select x-model="globalSettings.claude_code.haiku_model"
+                                        <label for="status-claude-code-haiku-tier" class="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">{{ t('status.claude_code.haiku_tier') }}</label>
+                                        <select id="status-claude-code-haiku-tier" x-model="globalSettings.claude_code.haiku_model"
                                                 @change="globalSettings.claude_code.haiku_model = globalSettings.claude_code.haiku_model || null; saveClaudeCodeSettings()"
                                                 class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg bg-white focus:ring-2 focus:ring-neutral-900 focus:border-neutral-900 transition-all">
                                             <option value="">{{ t('status.claude_code.select_model') }}</option>
@@ -836,7 +846,8 @@
                                         @click="copyToClipboard(claudeCommand); copied = true; setTimeout(() => copied = false, 2000)"
                                         class="p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
                                         :class="copied ? 'text-green-500 opacity-100' : 'text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100'"
-                                        :title="window.t('status.integrations.copy_command_tooltip')">
+                                        :title="window.t('status.integrations.copy_command_tooltip')"
+                                        aria-label="{{ t('status.integrations.copy_command_tooltip') }}: Claude Code">
                                     <svg x-show="!copied" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                                     <svg x-show="copied" x-cloak class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                                 </button>
@@ -857,7 +868,8 @@
                                                     @click="copyToClipboard(codexCommand); copied = true; setTimeout(() => copied = false, 2000)"
                                                     class="p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
                                                     :class="copied ? 'text-green-500 opacity-100' : 'text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100'"
-                                                    :title="window.t('status.integrations.copy_command_tooltip')">
+                                                    :title="window.t('status.integrations.copy_command_tooltip')"
+                                                    aria-label="{{ t('status.integrations.copy_command_tooltip') }}: Codex CLI">
                                                 <svg x-show="!copied" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                                                 <svg x-show="copied" x-cloak class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                                             </button>
@@ -869,7 +881,8 @@
                                                     @click="copyToClipboard(codexAppCommand); copied = true; setTimeout(() => copied = false, 2000)"
                                                     class="p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
                                                     :class="copied ? 'text-green-500 opacity-100' : 'text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100'"
-                                                    :title="window.t('status.integrations.copy_command_tooltip')">
+                                                    :title="window.t('status.integrations.copy_command_tooltip')"
+                                                    aria-label="{{ t('status.integrations.copy_command_tooltip') }}: Codex App">
                                                 <svg x-show="!copied" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                                                 <svg x-show="copied" x-cloak class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                                             </button>
@@ -891,7 +904,8 @@
                                         @click="copyToClipboard(opencodeCommand); copied = true; setTimeout(() => copied = false, 2000)"
                                         class="p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
                                         :class="copied ? 'text-green-500 opacity-100' : 'text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100'"
-                                        :title="window.t('status.integrations.copy_command_tooltip')">
+                                        :title="window.t('status.integrations.copy_command_tooltip')"
+                                        aria-label="{{ t('status.integrations.copy_command_tooltip') }}: OpenCode">
                                     <svg x-show="!copied" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                                     <svg x-show="copied" x-cloak class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                                 </button>
@@ -908,6 +922,7 @@
                                 </div>
                                 <select x-model="globalSettings.integrations.openclaw_tools_profile"
                                         @change="saveIntegrationSettings()"
+                                        aria-label="{{ t('status.integrations.openclaw_tools_profile') }}"
                                         class="text-xs border border-neutral-200 rounded-md px-2 py-1 text-neutral-600 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300 flex-shrink-0">
                                     <option value="minimal">Minimal</option>
                                     <option value="coding">Coding</option>
@@ -918,7 +933,8 @@
                                         @click="copyToClipboard(openclawCommand); copied = true; setTimeout(() => copied = false, 2000)"
                                         class="p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
                                         :class="copied ? 'text-green-500 opacity-100' : 'text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100'"
-                                        :title="window.t('status.integrations.copy_command_tooltip')">
+                                        :title="window.t('status.integrations.copy_command_tooltip')"
+                                        aria-label="{{ t('status.integrations.copy_command_tooltip') }}: OpenClaw">
                                     <svg x-show="!copied" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                                     <svg x-show="copied" x-cloak class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                                 </button>
@@ -937,7 +953,8 @@
                                         @click="copyToClipboard(hermesCommand); copied = true; setTimeout(() => copied = false, 2000)"
                                         class="p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
                                         :class="copied ? 'text-green-500 opacity-100' : 'text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100'"
-                                        :title="window.t('status.integrations.copy_command_tooltip')">
+                                        :title="window.t('status.integrations.copy_command_tooltip')"
+                                        aria-label="{{ t('status.integrations.copy_command_tooltip') }}: Hermes Agent">
                                     <svg x-show="!copied" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                                     <svg x-show="copied" x-cloak class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                                 </button>
@@ -956,7 +973,8 @@
                                         @click="copyToClipboard(piCommand); copied = true; setTimeout(() => copied = false, 2000)"
                                         class="p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
                                         :class="copied ? 'text-green-500 opacity-100' : 'text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100'"
-                                        :title="window.t('status.integrations.copy_command_tooltip')">
+                                        :title="window.t('status.integrations.copy_command_tooltip')"
+                                        aria-label="{{ t('status.integrations.copy_command_tooltip') }}: Pi">
                                     <svg x-show="!copied" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                                     <svg x-show="copied" x-cloak class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                                 </button>
@@ -975,7 +993,8 @@
                                         @click="copyToClipboard(copilotCommand); copied = true; setTimeout(() => copied = false, 2000)"
                                         class="p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
                                         :class="copied ? 'text-green-500 opacity-100' : 'text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100'"
-                                        :title="window.t('status.integrations.copy_command_tooltip')">
+                                        :title="window.t('status.integrations.copy_command_tooltip')"
+                                        aria-label="{{ t('status.integrations.copy_command_tooltip') }}: Copilot CLI">
                                     <svg x-show="!copied" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                                     <svg x-show="copied" x-cloak class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                                 </button>
