@@ -10,6 +10,7 @@
                 <div class="flex items-center justify-between mb-4">
                     <h4 id="settings-apply-modal-title" tabindex="-1" autofocus class="text-lg font-bold tracking-tight text-neutral-900" x-text="settingsApplyTitle()"></h4>
                     <button type="button" @click="closeSettingsApply()"
+                            aria-label="{{ t('modal.model_settings.actions.close') }}"
                             :disabled="settingsApply.phase === 'loading'"
                             class="p-2 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 rounded-full transition-all disabled:opacity-50">
                         <i data-lucide="x" class="w-5 h-5"></i>
@@ -101,8 +102,8 @@
                     </template>
                     <template x-if="settingsApply.mode !== 'reset'">
                         <div class="space-y-1">
-                            <label class="block text-xs font-bold uppercase tracking-wider text-neutral-500">{{ t('modal.model_settings.actions.applied_settings') }}</label>
-                            <textarea readonly rows="10" spellcheck="false"
+                            <label for="settings-apply-json" class="block text-xs font-bold uppercase tracking-wider text-neutral-500">{{ t('modal.model_settings.actions.applied_settings') }}</label>
+                            <textarea id="settings-apply-json" readonly rows="10" spellcheck="false"
                                       class="w-full px-4 py-2.5 border border-neutral-200 rounded-xl text-xs font-mono bg-neutral-50 text-neutral-700"
                                       :value="settingsApplyJson()"></textarea>
                         </div>

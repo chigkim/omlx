@@ -14,6 +14,7 @@
                 <div class="flex flex-wrap items-center gap-2 mb-10 animate-fade-in-up">
                     <button
                         @click="setBenchTab('throughput')"
+                        x-a11y-pressed="benchTab === 'throughput'"
                         :class="benchTab === 'throughput'
                             ? 'bg-neutral-900 text-white'
                             : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'"
@@ -22,6 +23,7 @@
                     </button>
                     <button
                         @click="setBenchTab('accuracy')"
+                        x-a11y-pressed="benchTab === 'accuracy'"
                         :class="benchTab === 'accuracy'
                             ? 'bg-neutral-900 text-white'
                             : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'"
@@ -30,6 +32,7 @@
                     </button>
                     <button
                         @click="setBenchTab('context')"
+                        x-a11y-pressed="benchTab === 'context'"
                         :class="benchTab === 'context'
                             ? 'bg-neutral-900 text-white'
                             : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'"
@@ -99,8 +102,8 @@
                         <div class="px-6 py-5 space-y-5">
                             <!-- Model Selector -->
                             <div>
-                                <label class="block text-sm font-medium text-neutral-700 mb-2">{{ t('bench.config.model') }}</label>
-                                <select x-model="benchModelId"
+                                <label for="bench-config-model" class="block text-sm font-medium text-neutral-700 mb-2">{{ t('bench.config.model') }}</label>
+                                <select id="bench-config-model" x-model="benchModelId"
                                         :disabled="benchRunning || benchExternalEnabled"
                                         class="w-full max-w-md px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white disabled:opacity-50">
                                     <option value="">{{ t('bench.config.model_placeholder') }}</option>
@@ -112,8 +115,8 @@
 
                             <!-- Context Profile -->
                             <div>
-                                <label class="block text-sm font-medium text-neutral-700 mb-2">{{ t('bench.config.context_profile') }}</label>
-                                <select x-model="benchContextProfile"
+                                <label for="bench-config-context-profile" class="block text-sm font-medium text-neutral-700 mb-2">{{ t('bench.config.context_profile') }}</label>
+                                <select id="bench-config-context-profile" x-model="benchContextProfile"
                                         :disabled="benchRunning"
                                         class="w-full max-w-md px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white disabled:opacity-50">
                                     <option value="code_python">{{ t('bench.config.context.code_python') }}</option>
@@ -216,8 +219,8 @@
                                                        class="w-full max-w-md px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white disabled:opacity-50">
                                             </div>
                                             <div>
-                                                <label class="block text-xs font-medium text-neutral-600 mb-1">{{ t('bench.config.external_api_key') }}</label>
-                                                <input type="password"
+                                                <label for="bench-config-external-api-key" class="block text-xs font-medium text-neutral-600 mb-1">{{ t('bench.config.external_api_key') }}</label>
+                                                <input id="bench-config-external-api-key" type="password"
                                                        autocomplete="off"
                                                        x-model="externalApiKey"
                                                        @change="saveExternalEndpoint()"

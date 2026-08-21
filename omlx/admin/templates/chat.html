@@ -1117,9 +1117,13 @@
                         <div class="flex items-center gap-0 flex-1 min-w-0">
                             <i x-show="chat.pinned" data-lucide="pin" class="w-3 h-3 flex-shrink-0 mr-1"
                                 style="color: var(--timeline-accent);"></i>
-                            <span class="text-sm truncate flex-1" style="color: var(--text-primary);"
+                            <!-- A real button so the chat can be opened from the keyboard;
+                                 the row div keeps its click target for the mouse. -->
+                            <button type="button" @click.stop="loadChat(chat.id)"
+                                x-a11y-pressed="currentChatId === chat.id"
+                                class="text-sm truncate flex-1 text-left" style="color: var(--text-primary);"
                                 :title="displayChatTitle(chat)"
-                                x-text="displayChatTitle(chat)"></span>
+                                x-text="displayChatTitle(chat)"></button>
                             <button @click.stop="togglePinChat(chat.id)"
                                 class="p-1 hover:bg-surface-alt rounded transition-opacity"
                                 :class="chat.pinned ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
@@ -1157,6 +1161,7 @@
     <div class="flex-1 flex flex-col bg-surface overflow-hidden min-w-0 relative">
         <!-- Floating Sidebar Toggles -->
         <button @click="sidebarOpen = true"
+            aria-label="{{ t('chat.open_sidebar') }}"
             class="absolute p-1.5 bg-surface hover:bg-surface-muted rounded-lg border border-line z-[100] shadow-sm"
             style="top: 1rem; left: 1rem; color: var(--text-primary);"
             x-show="showLeftToggle">
@@ -1193,6 +1198,7 @@
                     style="min-width: 15rem; max-height: 18rem;">
                     <template x-for="model in availableModels" :key="model.id">
                         <button @click="selectModel(model.id); modelMenuOpen = false"
+                            x-a11y-pressed="model.id === currentModel"
                             class="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left hover:bg-surface-muted transition-colors"
                             :class="model.id === currentModel ? 'font-semibold' : ''"
                             style="color: var(--text-primary);">
@@ -1865,11 +1871,13 @@
                             style="color: var(--text-primary);"></textarea>
                         <div class="relative flex-shrink-0">
                             <button x-show="!isCurrentChatStreaming()" @click="sendMessage()"
+                                aria-label="{{ t('chat.shortcut_send') }}"
                                 :disabled="(hasAsrSupport() ? (!uploadAudio || micActive()) : (!inputMessage.trim() && uploadImages.length === 0 && uploadDocuments.length === 0)) || hasPendingUploads() || !apiKeySet || !currentModel"
                                 class="w-10 h-10 m-1 bg-accent hover:bg-accent-hover disabled:bg-surface-muted rounded-full transition-colors flex items-center justify-center">
                                 <i data-lucide="arrow-up" class="w-4 h-4 text-accent-fg"></i>
                             </button>
                             <button x-show="isCurrentChatStreaming()" @click="stopStreaming()"
+                                aria-label="{{ t('chat.stop_tooltip') }}"
                                 class="w-10 h-10 m-1 bg-surface-muted hover:bg-surface rounded-full border border-line transition-colors flex items-center justify-center">
                                 <div class="w-3 h-3 rounded-[2px]" style="background-color: var(--text-danger);"></div>
                             </button>
@@ -1942,6 +1950,7 @@
             <div class="flex items-center gap-1">
                 <div class="flex flex-1 items-center gap-1">
                     <button @click="rightSidebarTab = 'settings'"
+                        x-a11y-pressed="rightSidebarTab === 'settings'"
                         class="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors"
                         :class="rightSidebarTab === 'settings'
                             ? 'bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
@@ -1950,6 +1959,7 @@
                         <span>{{ t('chat.model_tab') }}</span>
                     </button>
                     <button @click="rightSidebarTab = 'profile'"
+                        x-a11y-pressed="rightSidebarTab === 'profile'"
                         class="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors"
                         :class="rightSidebarTab === 'profile'
                             ? 'bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
@@ -1958,6 +1968,7 @@
                         <span>{{ t('chat.profile_tab') }}</span>
                     </button>
                     <button @click="rightSidebarTab = 'chat'"
+                        x-a11y-pressed="rightSidebarTab === 'chat'"
                         class="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors"
                         :class="rightSidebarTab === 'chat'
                             ? 'bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100'
@@ -1989,10 +2000,17 @@
                                 <div @click="selectPromptProfile(p.name)"
                                     class="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer group transition-colors"
                                     :class="activePromptProfile === p.name ? 'bg-surface-muted' : 'hover:bg-surface-muted'">
-                                    <span class="w-2 h-2 rounded-full flex-shrink-0"
-                                        :class="activePromptProfile === p.name ? 'bg-blue-500' : 'border border-line'"></span>
-                                    <span class="flex-1 text-xs font-medium truncate"
-                                        style="color: var(--text-primary);" x-text="p.name"></span>
+                                    <!-- The row's label area is a real button so the profile can be
+                                         selected by keyboard and its state announced. The row keeps
+                                         its own click target for the mouse. -->
+                                    <button type="button" @click.stop="selectPromptProfile(p.name)"
+                                        x-a11y-pressed="activePromptProfile === p.name"
+                                        class="flex flex-1 min-w-0 items-center gap-2 text-left cursor-pointer">
+                                        <span class="w-2 h-2 rounded-full flex-shrink-0"
+                                            :class="activePromptProfile === p.name ? 'bg-blue-500' : 'border border-line'"></span>
+                                        <span class="flex-1 text-xs font-medium truncate"
+                                            style="color: var(--text-primary);" x-text="p.name"></span>
+                                    </button>
                                     <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                                         :class="{'!opacity-100': activePromptProfile === p.name}">
                                         <button x-show="p.name !== 'System Default'" @click.stop="startRenamingPromptProfile()"
@@ -2008,10 +2026,12 @@
                                         <template x-if="profileDeleteConfirm === p.name">
                                             <span class="flex items-center gap-0.5">
                                                 <button @click.stop="deletePromptProfile(p.name)"
+                                                    aria-label="{{ t('chat.profile_delete_tooltip') }}"
                                                     class="p-1 text-green-600 hover:bg-surface-muted rounded">
                                                     <i data-lucide="check" class="w-3 h-3"></i>
                                                 </button>
                                                 <button @click.stop="profileDeleteConfirm = null"
+                                                    aria-label="{{ t('chat.edit_cancel') }}"
                                                     class="p-1 text-red-500 hover:bg-surface-muted rounded">
                                                     <i data-lucide="x" class="w-3 h-3"></i>
                                                 </button>
@@ -2032,10 +2052,12 @@
                                         placeholder="{{ t('chat.profile_name_placeholder') }}"
                                         autofocus>
                                     <button @click.stop="commitRenamingPromptProfile()"
+                                        aria-label="{{ t('chat.profile_rename_tooltip') }}"
                                         class="p-1 text-green-600 hover:bg-surface-muted rounded">
                                         <i data-lucide="check" class="w-3 h-3"></i>
                                     </button>
                                     <button @click.stop="cancelRenamingPromptProfile()"
+                                        aria-label="{{ t('chat.rename_cancel_tooltip') }}"
                                         class="p-1 text-red-500 hover:bg-surface-muted rounded">
                                         <i data-lucide="x" class="w-3 h-3"></i>
                                     </button>
@@ -2084,11 +2106,11 @@
                 <div class="space-y-1">
                     <div class="flex items-center gap-1.5 mb-1">
                         <i data-lucide="user" class="w-3 h-3" style="color: var(--text-secondary);"></i>
-                        <label class="text-[10px] font-bold uppercase tracking-wider"
+                        <label for="chat-active-profile" class="text-[10px] font-bold uppercase tracking-wider"
                             style="color: var(--text-secondary);">{{ t('chat.active_profile') }}</label>
                     </div>
                     <div class="relative">
-                        <select
+                        <select id="chat-active-profile"
                             :value="activePromptProfile || ''"
                             @change="selectPromptProfile($event.target.value || null)"
                             class="w-full px-3 py-2 text-xs border border-line rounded-xl font-medium cursor-pointer appearance-none focus:outline-none focus:border-line-strong transition-colors bg-surface-muted hover:bg-surface-alt"
@@ -2105,10 +2127,10 @@
 
                 <!-- Active Model Selector -->
                 <div class="space-y-1">
-                    <label class="text-[10px] font-bold uppercase tracking-wider block"
+                    <label for="chat-active-model" class="text-[10px] font-bold uppercase tracking-wider block"
                         style="color: var(--text-secondary);">{{ t('chat.active_model') }}</label>
                     <div class="relative">
-                        <select x-model="currentModel"
+                        <select id="chat-active-model" x-model="currentModel"
                             @change="selectModel($event.target.value)"
                             class="w-full px-3 py-2 text-xs border border-line rounded-xl font-medium cursor-pointer appearance-none focus:outline-none focus:border-line-strong transition-colors bg-surface-muted hover:bg-surface-alt"
                             style="color: var(--text-primary);">
@@ -2195,9 +2217,9 @@
 
                 <!-- Thinking: Auto / On (Unlimit) / On (Limit) / Off -->
                 <div class="p-3 bg-surface-muted rounded-xl border border-line space-y-2">
-                    <label class="text-[10px] font-bold uppercase tracking-wider block"
+                    <label for="chat-thinking-label" class="text-[10px] font-bold uppercase tracking-wider block"
                         style="color: var(--text-secondary);">{{ t('chat.thinking_label') }}</label>
-                    <select :value="thinkingModeValue()" @change="setThinkingMode($event.target.value)"
+                    <select id="chat-thinking-label" :value="thinkingModeValue()" @change="setThinkingMode($event.target.value)"
                         class="w-full px-3 py-2 text-xs border border-line rounded-xl bg-surface"
                         style="color: var(--text-primary);">
                         <option value="auto" :disabled="!thinkingModes().includes('auto')">{{ t('chat.thinking_mode.auto') }}</option>
@@ -2247,18 +2269,18 @@
                         style="color: var(--text-secondary);">{{ t('chat.attachments') }}</label>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1">
-                            <label class="text-[10px] font-bold uppercase tracking-wider"
+                            <label for="chat-max-images" class="text-[10px] font-bold uppercase tracking-wider"
                                 style="color: var(--text-secondary);">{{ t('chat.max_images') }}</label>
-                            <input type="number" min="0" step="1" x-model.number="chatSettings.maxImages"
+                            <input id="chat-max-images" type="number" min="0" step="1" x-model.number="chatSettings.maxImages"
                                 @change="saveChatSettings()"
                                 class="w-full px-3 py-2 text-xs border border-line rounded-xl focus:outline-none focus:border-line-strong bg-surface-muted"
                                 style="color: var(--text-primary);">
                             <p class="text-[10px]" style="color: var(--text-tertiary);">{{ t('chat.unlimited_hint') }}</p>
                         </div>
                         <div class="space-y-1">
-                            <label class="text-[10px] font-bold uppercase tracking-wider"
+                            <label for="chat-max-image-size" class="text-[10px] font-bold uppercase tracking-wider"
                                 style="color: var(--text-secondary);">{{ t('chat.max_image_size') }}</label>
-                            <input type="number" min="1" step="1" x-model.number="chatSettings.maxImageSizeMb"
+                            <input id="chat-max-image-size" type="number" min="1" step="1" x-model.number="chatSettings.maxImageSizeMb"
                                 @change="saveChatSettings()"
                                 class="w-full px-3 py-2 text-xs border border-line rounded-xl focus:outline-none focus:border-line-strong bg-surface-muted"
                                 style="color: var(--text-primary);">
@@ -2380,7 +2402,8 @@
     <!-- Image Modal -->
     <div x-show="imageModal.show" x-cloak class="image-modal" @click="closeImageModal()"
         @keydown.escape.window="closeImageModal()">
-        <button class="image-modal-close" @click="closeImageModal()">
+        <button class="image-modal-close" @click="closeImageModal()"
+        aria-label="{{ t('chat.close') }}">
             <i data-lucide="x" class="w-5 h-5"></i>
         </button>
         <img :src="imageModal.src" @click.stop :alt="window.t('chat.image_preview')" x-show="imageModal.src">
@@ -2404,13 +2427,14 @@
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-lg font-bold" style="color: var(--text-primary);">{{ t('chat.chat_settings') }}</h3>
                     <button @click="showChatSettingsModal = false"
+                        aria-label="{{ t('chat.close') }}"
                         class="p-2 hover:bg-surface-muted rounded-full transition-colors">
                         <i data-lucide="x" class="w-5 h-5" style="color: var(--text-tertiary);"></i>
                     </button>
                 </div>
                 <div class="mb-6">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-fg-tertiary mb-2">{{ t('chat.theme_label') }}</label>
-                    <select @change="setTheme($event.target.value)" x-model="theme"
+                    <label for="chat-theme-label" class="block text-xs font-bold uppercase tracking-wider text-fg-tertiary mb-2">{{ t('chat.theme_label') }}</label>
+                    <select id="chat-theme-label" @change="setTheme($event.target.value)" x-model="theme"
                         class="w-full px-3 py-2 border border-line rounded-xl text-sm focus:outline-none focus:border-line-strong"
                         style="background: var(--bg-primary); color: var(--text-primary);">
                         <option value="auto">{{ t('navbar.theme.auto') }}</option>
@@ -2472,7 +2496,8 @@
         <div class="w-full max-w-sm rounded-2xl border border-line bg-surface shadow-2xl overflow-hidden" @click.stop>
             <div class="flex items-center justify-between px-5 py-3.5 border-b border-line">
                 <h3 class="text-sm font-bold" style="color: var(--text-primary);">{{ t('chat.keyboard_shortcuts') }}</h3>
-                <button @click="showShortcutsHelp = false" class="p-1.5 -mr-1.5 hover:bg-surface-muted rounded-lg transition-colors">
+                <button @click="showShortcutsHelp = false" class="p-1.5 -mr-1.5 hover:bg-surface-muted rounded-lg transition-colors"
+                aria-label="{{ t('chat.close') }}">
                     <i data-lucide="x" class="w-4 h-4" style="color: var(--text-tertiary);"></i>
                 </button>
             </div>
