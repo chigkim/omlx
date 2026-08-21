@@ -19,6 +19,7 @@
                                     <template x-for="opt in dashWidthOptions" :key="opt.id">
                                         <button type="button"
                                             @click="setDashboardWidth(opt.id)"
+                                            x-a11y-pressed="dashDraft.width === opt.id"
                                             :class="dashDraft.width === opt.id ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-600 hover:bg-neutral-50'"
                                             class="px-3 py-1.5 text-xs font-medium transition-colors"
                                             x-text="opt.label"></button>

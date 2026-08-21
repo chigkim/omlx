@@ -3,6 +3,7 @@
             <div class="flex items-center gap-2 mb-10 animate-fade-in-up">
                 <button
                     @click="setSettingsTab('global')"
+                    x-a11y-pressed="activeTab === 'global'"
                     :class="activeTab === 'global'
                         ? 'bg-neutral-900 text-white'
                         : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'"
@@ -12,6 +13,7 @@
                 </button>
                 <button
                     @click="setSettingsTab('models')"
+                    x-a11y-pressed="activeTab === 'models'"
                     :class="activeTab === 'models'
                         ? 'bg-neutral-900 text-white'
                         : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'"
@@ -21,6 +23,7 @@
                 </button>
                 <button
                     @click="setSettingsTab('integrations')"
+                    x-a11y-pressed="activeTab === 'integrations'"
                     :class="activeTab === 'integrations'
                         ? 'bg-neutral-900 text-white'
                         : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'"
@@ -59,13 +62,13 @@
                             <div class="flex items-center justify-between px-6 py-4 bg-neutral-100 border-b border-neutral-200">
                                 <div class="flex items-center gap-3">
                                     <i data-lucide="globe" class="w-4 h-4 text-neutral-500"></i>
-                                    <span class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.language.section_label') }}</span>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.language.section_label') }}</h4>
                                 </div>
                             </div>
                             <div class="divide-y divide-neutral-100">
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
-                                    <label class="text-sm text-neutral-700">{{ t('settings.language.label') }}</label>
-                                    <select x-model="globalSettings.ui.language"
+                                    <label for="settings-language" class="text-sm text-neutral-700">{{ t('settings.language.label') }}</label>
+                                    <select id="settings-language" x-model="globalSettings.ui.language"
                                             @change="if (!globalDefaultsPending) saveLanguage(globalSettings.ui.language)"
                                             class="px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all bg-white">
                                         <option value="en">{{ t('settings.language.en') }}</option>
@@ -87,7 +90,7 @@
                             <div class="flex items-center justify-between px-6 py-4 bg-neutral-100 border-b border-neutral-200">
                                 <div class="flex items-center gap-3">
                                     <i data-lucide="shield" class="w-4 h-4 text-neutral-500"></i>
-                                    <span class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.auth.section_label') }}</span>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.auth.section_label') }}</h4>
                                 </div>
                             </div>
                             <div class="divide-y divide-neutral-100">
@@ -128,6 +131,8 @@
                                            x-show="!isLoopbackBindHost(globalSettings.server.host)" x-cloak>{{ t('settings.auth.skip_verification_warning') }}</p>
                                     </div>
                                     <button type="button"
+                                            x-a11y-switch="isLoopbackBindHost(globalSettings.server.host) && globalSettings.auth.skip_api_key_verification"
+                                            :aria-label="window.t('settings.auth.skip_verification')"
                                             @click="if (isLoopbackBindHost(globalSettings.server.host)) globalSettings.auth.skip_api_key_verification = !globalSettings.auth.skip_api_key_verification"
                                             :disabled="!isLoopbackBindHost(globalSettings.server.host)"
                                             :class="!isLoopbackBindHost(globalSettings.server.host) ? 'bg-neutral-200 opacity-50 cursor-not-allowed' : (globalSettings.auth.skip_api_key_verification ? 'bg-black' : 'bg-neutral-200')"
@@ -193,6 +198,7 @@
                                                     <div class="flex items-center gap-2 mt-1">
                                                         <code class="text-xs text-neutral-400 font-mono" x-text="showSubKeys[sk.key] ? sk.key : sk.key.substring(0, 4) + '••••••••'"></code>
                                                         <button type="button" @click="showSubKeys[sk.key] = !showSubKeys[sk.key]"
+                                                                :aria-label="showSubKeys[sk.key] ? window.t('settings.auth.sub_keys_hide_tooltip') : window.t('settings.auth.sub_keys_reveal_tooltip')"
                                                                 class="text-neutral-400 hover:text-neutral-600 transition-colors">
                                                             <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
                                                         </button>
@@ -220,7 +226,7 @@
                             <div class="flex items-center justify-between px-6 py-4 bg-neutral-100 border-b border-neutral-200">
                                 <div class="flex items-center gap-3">
                                     <i data-lucide="server" class="w-4 h-4 text-neutral-500"></i>
-                                    <span class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.server.section_label') }}</span>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.server.section_label') }}</h4>
                                 </div>
                             </div>
                             <div class="divide-y divide-neutral-100">
@@ -241,12 +247,12 @@
                                          }
                                      }">
                                     <div class="flex items-center gap-2">
-                                        <label class="text-sm text-neutral-700">{{ t('settings.server.host') }}</label>
+                                        <label for="settings-server-host" class="text-sm text-neutral-700">{{ t('settings.server.host') }}</label>
                                         <span class="px-1.5 py-0.5 text-[9px] font-medium rounded bg-amber-50 text-amber-600 border border-amber-200">{{ t('settings.global.restart_badge') }}</span>
                                     </div>
                                     <div class="flex flex-col items-end gap-1">
                                         <div class="flex items-center gap-2">
-                                            <select :value="hostMode"
+                                            <select id="settings-server-host" :value="hostMode"
                                                     @change="setHostMode($event.target.value)"
                                                     class="px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all bg-white">
                                                 <option value="localhost">{{ t('settings.server.host_localhost') }}</option>
@@ -263,17 +269,17 @@
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                     <div class="flex items-center gap-2">
-                                        <label class="text-sm text-neutral-700">{{ t('settings.server.port') }}</label>
+                                        <label for="settings-server-port" class="text-sm text-neutral-700">{{ t('settings.server.port') }}</label>
                                         <span class="px-1.5 py-0.5 text-[9px] font-medium rounded bg-amber-50 text-amber-600 border border-amber-200">{{ t('settings.global.restart_badge') }}</span>
                                     </div>
-                                    <input type="number" x-model.number="globalSettings.server.port"
+                                    <input id="settings-server-port" type="number" x-model.number="globalSettings.server.port"
                                            class="w-full sm:w-48 px-3 py-2 text-sm text-right border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all">
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                     <div class="flex items-center gap-2">
-                                        <label class="text-sm text-neutral-700">{{ t('settings.server.log_level') }}</label>
+                                        <label for="settings-server-log-level" class="text-sm text-neutral-700">{{ t('settings.server.log_level') }}</label>
                                     </div>
-                                    <select x-model="globalSettings.server.log_level"
+                                    <select id="settings-server-log-level" x-model="globalSettings.server.log_level"
                                             class="w-full sm:w-48 px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all bg-white">
                                         <option value="error">{{ t('settings.server.log_level_error') }}</option>
                                         <option value="warning">{{ t('settings.server.log_level_warning') }}</option>
@@ -290,7 +296,7 @@
                             <div class="flex items-center justify-between px-6 py-4 bg-neutral-100 border-b border-neutral-200">
                                 <div class="flex items-center gap-3">
                                     <i data-lucide="box" class="w-4 h-4 text-neutral-500"></i>
-                                    <span class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.model.section_label') }}</span>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.model.section_label') }}</h4>
                                 </div>
                             </div>
                             <div class="divide-y divide-neutral-100">
@@ -300,6 +306,8 @@
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.model.model_fallback_desc') }}</p>
                                     </div>
                                     <button type="button"
+                                            x-a11y-switch="globalSettings.model.model_fallback"
+                                            :aria-label="window.t('settings.model.model_fallback')"
                                             @click="globalSettings.model.model_fallback = !globalSettings.model.model_fallback"
                                             :class="globalSettings.model.model_fallback ? 'bg-black' : 'bg-neutral-200'"
                                             class="relative w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
@@ -313,6 +321,8 @@
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.model.hide_helper_models_desc') }}</p>
                                     </div>
                                     <button type="button"
+                                            x-a11y-switch="globalSettings.model.hide_helper_models"
+                                            :aria-label="window.t('settings.model.hide_helper_models')"
                                             @click="globalSettings.model.hide_helper_models = !globalSettings.model.hide_helper_models"
                                             :class="globalSettings.model.hide_helper_models ? 'bg-black' : 'bg-neutral-200'"
                                             class="relative w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
@@ -338,6 +348,8 @@
                                                        class="flex-1 px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all font-mono text-xs"
                                                        :placeholder="index === 0 ? '{{ t('settings.model.placeholder_primary') }}' : '{{ t('settings.model.placeholder_additional') }}'">
                                                 <button @click="if (globalSettings.model.model_dirs.length > 1) globalSettings.model.model_dirs.splice(index, 1)"
+                                                        :disabled="globalSettings.model.model_dirs.length <= 1"
+                                                        :aria-label="window.t('settings.model.remove_directory')"
                                                         class="flex-shrink-0 p-1.5 rounded-lg transition-colors"
                                                         :class="globalSettings.model.model_dirs.length > 1 ? 'text-neutral-400 hover:text-red-500 hover:bg-red-50' : 'text-neutral-200 cursor-not-allowed'">
                                                     <i data-lucide="minus" class="w-3.5 h-3.5"></i>
@@ -355,6 +367,8 @@
                                            x-text="globalSettings.huggingface.hf_cache_path"></p>
                                     </div>
                                     <button type="button"
+                                            x-a11y-switch="globalSettings.huggingface.hf_cache_enabled"
+                                            :aria-label="window.t('settings.model.hf_cache')"
                                             @click="globalSettings.huggingface.hf_cache_enabled = !globalSettings.huggingface.hf_cache_enabled"
                                             :class="globalSettings.huggingface.hf_cache_enabled ? 'bg-black' : 'bg-neutral-200'"
                                             class="relative w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
@@ -370,7 +384,7 @@
                             <div class="flex items-center justify-between px-6 py-4 bg-neutral-100 border-b border-neutral-200">
                                 <div class="flex items-center gap-3">
                                     <i data-lucide="gauge" class="w-4 h-4 text-neutral-500"></i>
-                                    <span class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.resource.section_label') }}</span>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.resource.section_label') }}</h4>
                                 </div>
                                 <span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-green-50 text-green-600 border border-green-200">
                                     {{ t('settings.resource.live_badge') }}
@@ -398,7 +412,8 @@
                                                             @click="copyWiredLimitCommand()"
                                                             :class="wiredLimitCopied ? 'text-green-500' : 'text-fg-tertiary hover:text-fg'"
                                                             class="transition-colors flex-shrink-0"
-                                                            :title="wiredLimitCopied ? 'Copied' : 'Copy'">
+                                                            :title="wiredLimitCopied ? window.t('settings.resource.wired_limit_copied') : window.t('settings.resource.wired_limit_copy_tooltip')"
+                                                            :aria-label="window.t('settings.resource.wired_limit_copy_tooltip')">
                                                         <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                                                     </button>
                                                 </div>
@@ -428,6 +443,8 @@
                                             <span class="text-xs text-neutral-500">GB</span>
                                         </div>
                                         <button type="button"
+                                                x-a11y-switch="globalSettings.memory.prefill_memory_guard"
+                                                :aria-label="window.t('settings.resource.prefill_memory_guard')"
                                                 @click="globalSettings.memory.prefill_memory_guard = !globalSettings.memory.prefill_memory_guard"
                                                 :class="globalSettings.memory.prefill_memory_guard ? 'bg-black' : 'bg-neutral-200'"
                                                 class="relative w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
@@ -439,7 +456,7 @@
                                 <!-- Memory Limit (In-Memory Hot Cache) -->
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.resource.hot_cache_limit') }}</label>
+                                        <label for="settings-resource-hot-cache" class="text-sm text-neutral-700">{{ t('settings.resource.hot_cache_limit') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">
                                             {{ t('settings.resource.hot_cache_description') }}
                                             <br>
@@ -448,7 +465,9 @@
                                     </div>
                                     <div class="flex flex-wrap items-center gap-2 sm:gap-3">
                                         <input type="range" min="0" max="50" step="1"
+                                               id="settings-resource-hot-cache"
                                                x-model.number="hotCachePercent"
+                                               :aria-valuetext="hotCachePercent === 0 ? window.t('settings.resource.off') : hotCachePercent + '%'"
                                                @input="updateHotCacheFromSlider()"
                                                class="w-32 h-1.5 bg-neutral-200 rounded-full appearance-none cursor-pointer
                                                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
@@ -456,15 +475,13 @@
                                                       [&::-webkit-slider-thumb]:shadow-sm">
                                         <span class="text-sm text-neutral-600 w-28 text-right inline-flex items-center justify-end gap-0">
                                             <span x-text="hotCachePercent === 0 ? window.t('settings.resource.off') : hotCachePercent + '%'"></span>
-                                            <span class="text-neutral-400 ml-1">(</span><span x-show="!editingHotCache" @click="editingHotCache = true" class="cursor-pointer hover:text-neutral-900" x-text="hotCacheSizeGB"></span><input x-show="editingHotCache"
-                                                   type="number"
+                                            <span class="text-neutral-400 ml-1">(</span><input type="number"
                                                    :value="hotCacheSizeGB"
-                                                   @change="updateHotCacheFromInput($event.target.value); editingHotCache = false"
-                                                   @blur="editingHotCache = false"
-                                                   @keydown.enter="updateHotCacheFromInput($event.target.value); editingHotCache = false"
-                                                   @keydown.escape="editingHotCache = false"
-                                                   x-init="if (editingHotCache) { $nextTick(() => $el.focus()) }"
-                                                   class="w-12 px-1 text-sm text-right border border-neutral-900 rounded focus:outline-none"
+                                                   aria-label="{{ t('settings.resource.hot_cache_limit') }} (GB)"
+                                                   autocomplete="off"
+                                                   @change="updateHotCacheFromInput($event.target.value)"
+                                                   :style="'width: ' + String(hotCacheSizeGB).length + 'ch'"
+                                                   class="text-sm text-right text-neutral-600 tabular-nums bg-transparent border-0 p-0 rounded hover:text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                                    min="0"
                                                    step="1"><span class="text-neutral-400">GB)</span>
                                         </span>
@@ -473,14 +490,16 @@
                                 <!-- SSD Cache Limit (Cold Cache) -->
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.resource.cold_cache_limit') }}</label>
+                                        <label for="settings-resource-cold-cache" class="text-sm text-neutral-700">{{ t('settings.resource.cold_cache_limit') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">
                                             {{ t('settings.resource.cold_cache_description') }}
                                         </p>
                                     </div>
                                     <div class="flex flex-wrap items-center gap-2 sm:gap-3">
                                         <input type="range" min="0" max="100" step="1"
+                                               id="settings-resource-cold-cache"
                                                x-model.number="cachePercent"
+                                               :aria-valuetext="cachePercent + '%'"
                                                @input="updateCacheFromSlider()"
                                                class="w-32 h-1.5 bg-neutral-200 rounded-full appearance-none cursor-pointer
                                                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
@@ -488,15 +507,13 @@
                                                       [&::-webkit-slider-thumb]:shadow-sm">
                                         <span class="text-sm text-neutral-600 w-28 text-right inline-flex items-center justify-end gap-0">
                                             <span x-text="cachePercent + '%'"></span>
-                                            <span class="text-neutral-400 ml-1">(</span><span x-show="!editingCache" @click="editingCache = true" class="cursor-pointer hover:text-neutral-900" x-text="cacheSizeGB"></span><input x-show="editingCache"
-                                                   type="number"
+                                            <span class="text-neutral-400 ml-1">(</span><input type="number"
                                                    :value="cacheSizeGB"
-                                                   @change="updateCacheFromInput($event.target.value); editingCache = false"
-                                                   @blur="editingCache = false"
-                                                   @keydown.enter="updateCacheFromInput($event.target.value); editingCache = false"
-                                                   @keydown.escape="editingCache = false"
-                                                   x-init="if (editingCache) { $nextTick(() => $el.focus()) }"
-                                                   class="w-12 px-1 text-sm text-right border border-neutral-900 rounded focus:outline-none"
+                                                   aria-label="{{ t('settings.resource.cold_cache_limit') }} (GB)"
+                                                   autocomplete="off"
+                                                   @change="updateCacheFromInput($event.target.value)"
+                                                   :style="'width: ' + String(cacheSizeGB).length + 'ch'"
+                                                   class="text-sm text-right text-neutral-600 tabular-nums bg-transparent border-0 p-0 rounded hover:text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                                    min="0"
                                                    step="1"><span class="text-neutral-400">GB)</span>
                                         </span>
@@ -506,24 +523,24 @@
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                     <div>
                                         <div class="flex items-center gap-2">
-                                            <label class="text-sm text-neutral-700">{{ t('settings.resource.max_concurrent_requests') }}</label>
+                                            <label for="settings-resource-max-concurrent-requests" class="text-sm text-neutral-700">{{ t('settings.resource.max_concurrent_requests') }}</label>
                                             <span class="px-1.5 py-0.5 text-[9px] font-medium rounded-full bg-amber-50 text-amber-600 border border-amber-200">
                                                 {{ t('settings.resource.restart_badge') }}
                                             </span>
                                         </div>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.resource.max_concurrent_requests_hint') }}</p>
                                     </div>
-                                    <input type="number" x-model.number="globalSettings.scheduler.max_concurrent_requests"
+                                    <input id="settings-resource-max-concurrent-requests" type="number" x-model.number="globalSettings.scheduler.max_concurrent_requests"
                                            min="1"
                                            class="w-full sm:w-48 px-3 py-2 text-sm text-right border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all">
                                 </div>
                                 <!-- Embedding Batch Size -->
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.resource.embedding_batch_size') }}</label>
+                                        <label for="settings-resource-embedding-batch-size" class="text-sm text-neutral-700">{{ t('settings.resource.embedding_batch_size') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.resource.embedding_batch_size_hint') }}</p>
                                     </div>
-                                    <input type="number" x-model.number="globalSettings.scheduler.embedding_batch_size"
+                                    <input id="settings-resource-embedding-batch-size" type="number" x-model.number="globalSettings.scheduler.embedding_batch_size"
                                            min="1"
                                            class="w-full sm:w-48 px-3 py-2 text-sm text-right border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all">
                                 </div>
@@ -534,6 +551,8 @@
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.resource.chunked_prefill_description') }}</p>
                                     </div>
                                     <button type="button"
+                                            x-a11y-switch="globalSettings.scheduler.chunked_prefill"
+                                            :aria-label="window.t('settings.resource.chunked_prefill')"
                                             @click="globalSettings.scheduler.chunked_prefill = !globalSettings.scheduler.chunked_prefill"
                                             :class="globalSettings.scheduler.chunked_prefill ? 'bg-black' : 'bg-neutral-200'"
                                             class="relative w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
@@ -548,6 +567,8 @@
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.resource.decode_fairness_description') }}</p>
                                     </div>
                                     <button type="button"
+                                            x-a11y-switch="globalSettings.scheduler.decode_fairness"
+                                            :aria-label="window.t('settings.resource.decode_fairness')"
                                             @click="globalSettings.scheduler.decode_fairness = !globalSettings.scheduler.decode_fairness"
                                             :class="globalSettings.scheduler.decode_fairness ? 'bg-black' : 'bg-neutral-200'"
                                             class="relative w-11 h-6 flex-shrink-0 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
@@ -563,6 +584,7 @@
                                     </div>
                                     <div class="flex rounded-lg border border-neutral-200 overflow-hidden flex-shrink-0">
                                         <button type="button"
+                                                x-a11y-pressed="globalSettings.scheduler.prefill_priority !== 'speed'"
                                                 @click="globalSettings.scheduler.prefill_priority = 'context'"
                                                 :class="globalSettings.scheduler.prefill_priority !== 'speed' ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-500 hover:bg-neutral-50'"
                                                 class="px-3 py-1.5 text-xs font-medium transition-all flex items-center gap-1.5">
@@ -570,6 +592,7 @@
                                             {{ t('settings.resource.prefill_priority.max_context') }}
                                         </button>
                                         <button type="button"
+                                                x-a11y-pressed="globalSettings.scheduler.prefill_priority === 'speed'"
                                                 @click="globalSettings.scheduler.prefill_priority = 'speed'"
                                                 :class="globalSettings.scheduler.prefill_priority === 'speed' ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-500 hover:bg-neutral-50'"
                                                 class="px-3 py-1.5 text-xs font-medium transition-all border-l border-neutral-200 flex items-center gap-1.5">
@@ -581,10 +604,10 @@
                                 <!-- Idle Timeout -->
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.model.idle_timeout') }}</label>
+                                        <label for="settings-model-idle-timeout" class="text-sm text-neutral-700">{{ t('settings.model.idle_timeout') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.model.idle_timeout_desc') }}</p>
                                     </div>
-                                    <select x-model="idleTimeoutValue"
+                                    <select id="settings-model-idle-timeout" x-model="idleTimeoutValue"
                                             @change="globalSettings.idle_timeout.idle_timeout_seconds = idleTimeoutValue === '' ? null : Number(idleTimeoutValue); if (!globalDefaultsPending) saveGlobalSettings()"
                                             class="px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all bg-white">
                                         <option value="">{{ t('settings.model.idle_timeout_none') }}</option>
@@ -604,7 +627,7 @@
                             <div class="flex items-center justify-between px-6 py-4 bg-neutral-100 border-b border-neutral-200">
                                 <div class="flex items-center gap-3">
                                     <i data-lucide="hard-drive" class="w-4 h-4 text-neutral-500"></i>
-                                    <span class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.cache.section_label') }}</span>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.cache.section_label') }}</h4>
                                 </div>
                             </div>
                             <div class="divide-y divide-neutral-100">
@@ -612,7 +635,10 @@
                                     <div class="flex items-center gap-2">
                                         <label class="text-sm text-neutral-700">{{ t('settings.cache.enabled') }}</label>
                                     </div>
-                                    <button type="button" @click="globalSettings.cache.enabled = !globalSettings.cache.enabled"
+                                    <button type="button"
+                                            x-a11y-switch="globalSettings.cache.enabled"
+                                            :aria-label="window.t('settings.cache.enabled')"
+                                            @click="globalSettings.cache.enabled = !globalSettings.cache.enabled"
                                             :class="globalSettings.cache.enabled ? 'bg-black' : 'bg-neutral-200'"
                                             class="relative w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
                                         <span :class="globalSettings.cache.enabled ? 'translate-x-5' : 'translate-x-0'"
@@ -629,7 +655,10 @@
                                         </div>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.cache.hot_cache_only_hint') }}</p>
                                     </div>
-                                    <button type="button" @click="globalSettings.cache.hot_cache_only = !globalSettings.cache.hot_cache_only"
+                                    <button type="button"
+                                            x-a11y-switch="globalSettings.cache.hot_cache_only"
+                                            :aria-label="window.t('settings.cache.hot_cache_only')"
+                                            @click="globalSettings.cache.hot_cache_only = !globalSettings.cache.hot_cache_only"
                                             :class="globalSettings.cache.hot_cache_only ? 'bg-black' : 'bg-neutral-200'"
                                             class="relative w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
                                         <span :class="globalSettings.cache.hot_cache_only ? 'translate-x-5' : 'translate-x-0'"
@@ -638,9 +667,9 @@
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                     <div class="flex items-center gap-2">
-                                        <label class="text-sm text-neutral-700">{{ t('settings.cache.ssd_directory') }}</label>
+                                        <label for="settings-cache-ssd-directory" class="text-sm text-neutral-700">{{ t('settings.cache.ssd_directory') }}</label>
                                     </div>
-                                    <input type="text" x-model="globalSettings.cache.ssd_cache_dir"
+                                    <input id="settings-cache-ssd-directory" type="text" x-model="globalSettings.cache.ssd_cache_dir"
                                            class="w-full sm:w-64 px-3 py-2 text-sm text-right border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all font-mono text-xs">
                                 </div>
                             </div>
@@ -651,7 +680,7 @@
                             <div class="flex items-center justify-between px-6 py-4 bg-neutral-100 border-b border-neutral-200">
                                 <div class="flex items-center gap-3">
                                     <i data-lucide="sliders" class="w-4 h-4 text-neutral-500"></i>
-                                    <span class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.generation.section_label') }}</span>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.generation.section_label') }}</h4>
                                 </div>
                             </div>
                             <div class="divide-y divide-neutral-100">
@@ -665,24 +694,24 @@
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.generation.max_context_window') }}</label>
+                                        <label for="settings-generation-max-context-window" class="text-sm text-neutral-700">{{ t('settings.generation.max_context_window') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.generation.max_context_window_hint') }}</p>
                                     </div>
-                                    <input type="number" x-model.number="globalSettings.sampling.max_context_window" min="1" max="2097152"
+                                    <input id="settings-generation-max-context-window" type="number" x-model.number="globalSettings.sampling.max_context_window" min="1" max="2097152"
                                            class="w-full sm:w-48 px-3 py-2 text-sm text-right border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all">
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
-                                    <label class="text-sm text-neutral-700">{{ t('settings.generation.max_tokens') }}</label>
-                                    <input type="number" x-model.number="globalSettings.sampling.max_tokens" min="1" max="131072"
+                                    <label for="settings-generation-max-tokens" class="text-sm text-neutral-700">{{ t('settings.generation.max_tokens') }}</label>
+                                    <input id="settings-generation-max-tokens" type="number" x-model.number="globalSettings.sampling.max_tokens" min="1" max="131072"
                                            class="w-full sm:w-48 px-3 py-2 text-sm text-right border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all">
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.generation.temperature') }}</label>
+                                        <label for="settings-generation-temperature" class="text-sm text-neutral-700">{{ t('settings.generation.temperature') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.generation.temperature_hint') }}</p>
                                     </div>
                                     <div class="flex items-center gap-3">
-                                        <input type="range" min="0" max="2" step="0.1"
+                                        <input id="settings-generation-temperature" type="range" min="0" max="2" step="0.1"
                                                x-model.number="globalSettings.sampling.temperature"
                                                class="w-24 h-1.5 bg-neutral-200 rounded-full appearance-none cursor-pointer
                                                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
@@ -693,11 +722,11 @@
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.generation.top_p') }}</label>
+                                        <label for="settings-generation-top-p" class="text-sm text-neutral-700">{{ t('settings.generation.top_p') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.generation.top_p_hint') }}</p>
                                     </div>
                                     <div class="flex items-center gap-3">
-                                        <input type="range" min="0" max="1" step="0.05"
+                                        <input id="settings-generation-top-p" type="range" min="0" max="1" step="0.05"
                                                x-model.number="globalSettings.sampling.top_p"
                                                class="w-24 h-1.5 bg-neutral-200 rounded-full appearance-none cursor-pointer
                                                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
@@ -708,18 +737,18 @@
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.generation.top_k') }}</label>
+                                        <label for="settings-generation-top-k" class="text-sm text-neutral-700">{{ t('settings.generation.top_k') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.generation.top_k_hint') }}</p>
                                     </div>
-                                    <input type="number" x-model.number="globalSettings.sampling.top_k" min="0"
+                                    <input id="settings-generation-top-k" type="number" x-model.number="globalSettings.sampling.top_k" min="0"
                                            class="w-full sm:w-48 px-3 py-2 text-sm text-right border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all">
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.generation.repetition_penalty') }}</label>
+                                        <label for="settings-generation-repetition-penalty" class="text-sm text-neutral-700">{{ t('settings.generation.repetition_penalty') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.generation.repetition_penalty_hint') }}</p>
                                     </div>
-                                    <input type="number" x-model.number="globalSettings.sampling.repetition_penalty" step="0.05" min="1"
+                                    <input id="settings-generation-repetition-penalty" type="number" x-model.number="globalSettings.sampling.repetition_penalty" step="0.05" min="1"
                                            class="w-full sm:w-48 px-3 py-2 text-sm text-right border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all">
                                 </div>
                             </div>
@@ -730,7 +759,7 @@
                             <div class="flex items-center justify-between px-6 py-4 bg-neutral-100 border-b border-neutral-200">
                                 <div class="flex items-center gap-3">
                                     <i data-lucide="plug" class="w-4 h-4 text-neutral-500"></i>
-                                    <span class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.mcp.section_label') }}</span>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.mcp.section_label') }}</h4>
                                 </div>
                                 <span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-amber-50 text-amber-600 border border-amber-200">
                                     {{ t('settings.mcp.restart_badge') }}
@@ -748,6 +777,8 @@
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.mcp.expose_tools_hint') }}</p>
                                     </div>
                                     <button type="button"
+                                            x-a11y-switch="globalSettings.mcp.expose_tools"
+                                            :aria-label="window.t('settings.mcp.expose_tools')"
                                             @click="globalSettings.mcp.expose_tools = !globalSettings.mcp.expose_tools"
                                             :class="globalSettings.mcp.expose_tools ? 'bg-black' : 'bg-neutral-200'"
                                             class="relative w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
@@ -763,7 +794,7 @@
                             <div class="flex items-center justify-between px-6 py-4 bg-neutral-100 border-b border-neutral-200">
                                 <div class="flex items-center gap-3">
                                     <i data-lucide="history" class="w-4 h-4 text-neutral-500"></i>
-                                    <span class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.usage.section_label') }}</span>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.usage.section_label') }}</h4>
                                 </div>
                                 <span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-green-50 text-green-600 border border-green-200">
                                     {{ t('settings.resource.live_badge') }}
@@ -776,10 +807,10 @@
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.usage.history_hint') }}</p>
                                     </div>
                                     <button type="button"
+                                            x-a11y-switch="globalSettings.usage.usage_history"
+                                            :aria-label="window.t('settings.usage.history')"
                                             @click="globalSettings.usage.usage_history = !globalSettings.usage.usage_history"
                                             :class="globalSettings.usage.usage_history ? 'bg-black' : 'bg-neutral-200'"
-                                            :aria-checked="globalSettings.usage.usage_history.toString()"
-                                            role="switch"
                                             class="relative w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
                                         <span :class="globalSettings.usage.usage_history ? 'translate-x-5' : 'translate-x-0'"
                                               class="block w-5 h-5 bg-white rounded-full shadow-sm transform transition-transform duration-300 absolute top-0.5 left-0.5"></span>
@@ -793,7 +824,7 @@
                             <div class="flex items-center justify-between px-6 py-4 bg-neutral-100 border-b border-neutral-200">
                                 <div class="flex items-center gap-3">
                                     <i data-lucide="network" class="w-4 h-4 text-neutral-500"></i>
-                                    <span class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.network.section_label') }}</span>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.network.section_label') }}</h4>
                                 </div>
                                 <span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-green-50 text-green-600 border border-green-200">
                                     {{ t('settings.resource.live_badge') }}
@@ -802,34 +833,34 @@
                             <div class="divide-y divide-neutral-100">
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.network.http_proxy') }}</label>
+                                        <label for="globalsettings-network-http-proxy" class="text-sm text-neutral-700">{{ t('settings.network.http_proxy') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.network.proxy_example')|replace('{url}', 'http://proxy.company.com:8080') }}</p>
                                     </div>
-                                    <input type="text" x-model="globalSettings.network.http_proxy"
+                                    <input id="globalsettings-network-http-proxy" type="text" x-model="globalSettings.network.http_proxy"
                                            class="w-full sm:w-64 px-3 py-2 text-sm text-right border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all font-mono text-xs">
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.network.https_proxy') }}</label>
+                                        <label for="globalsettings-network-https-proxy" class="text-sm text-neutral-700">{{ t('settings.network.https_proxy') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.network.proxy_example')|replace('{url}', 'http://proxy.company.com:8080') }}</p>
                                     </div>
-                                    <input type="text" x-model="globalSettings.network.https_proxy"
+                                    <input id="globalsettings-network-https-proxy" type="text" x-model="globalSettings.network.https_proxy"
                                            class="w-full sm:w-64 px-3 py-2 text-sm text-right border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all font-mono text-xs">
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.network.no_proxy') }}</label>
+                                        <label for="globalsettings-network-no-proxy" class="text-sm text-neutral-700">{{ t('settings.network.no_proxy') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.network.no_proxy_hint') }}</p>
                                     </div>
-                                    <input type="text" x-model="globalSettings.network.no_proxy"
+                                    <input id="globalsettings-network-no-proxy" type="text" x-model="globalSettings.network.no_proxy"
                                            class="w-full sm:w-64 px-3 py-2 text-sm text-right border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all font-mono text-xs">
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.network.ca_bundle') }}</label>
+                                        <label for="globalsettings-network-ca-bundle" class="text-sm text-neutral-700">{{ t('settings.network.ca_bundle') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.network.ca_bundle_hint') }}</p>
                                     </div>
-                                    <input type="text" x-model="globalSettings.network.ca_bundle"
+                                    <input id="globalsettings-network-ca-bundle" type="text" x-model="globalSettings.network.ca_bundle"
                                            class="w-full sm:w-64 px-3 py-2 text-sm text-right border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all font-mono text-xs">
                                 </div>
                             </div>
@@ -842,7 +873,7 @@
                                     class="w-full flex items-center justify-between px-6 py-4 bg-neutral-50 hover:bg-neutral-100 transition-colors cursor-pointer">
                                 <div class="flex items-center gap-3">
                                     <i data-lucide="settings-2" class="w-4 h-4 text-neutral-400"></i>
-                                    <span class="text-xs font-bold uppercase tracking-wider text-neutral-400">{{ t('settings.advanced.section_label') }}</span>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-400">{{ t('settings.advanced.section_label') }}</h4>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-amber-50 text-amber-600 border border-amber-200">
@@ -868,6 +899,8 @@
                                                 <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.advanced.distributed_inference_hint') }}</p>
                                             </div>
                                             <button type="button"
+                                                    x-a11y-switch="globalSettings.server.distributed_inference_enabled"
+                                                    :aria-label="window.t('settings.advanced.distributed_inference_enabled')"
                                                     @click="globalSettings.server.distributed_inference_enabled = !globalSettings.server.distributed_inference_enabled"
                                                     :class="globalSettings.server.distributed_inference_enabled ? 'bg-black' : 'bg-neutral-200'"
                                                     class="relative w-11 h-6 flex-shrink-0 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
@@ -887,10 +920,10 @@
                                     <div class="divide-y divide-neutral-100">
                                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                             <div class="flex-1">
-                                                <label class="text-sm text-neutral-700">{{ t('settings.advanced.burst_decode') }}</label>
+                                                <label for="settings-advanced-burst-decode" class="text-sm text-neutral-700">{{ t('settings.advanced.burst_decode') }}</label>
                                                 <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.advanced.burst_decode_hint') }}</p>
                                             </div>
-                                            <select x-model="globalSettings.server.burst_decode_mode"
+                                            <select id="settings-advanced-burst-decode" x-model="globalSettings.server.burst_decode_mode"
                                                     class="w-full sm:w-64 px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all">
                                                 <option value="off">{{ t('settings.advanced.burst_decode_off') }}</option>
                                                 <option value="light">{{ t('settings.advanced.burst_decode_light') }}</option>
@@ -904,6 +937,8 @@
                                                 <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.advanced.preserve_mid_system_cache_hint') }}</p>
                                             </div>
                                             <button type="button"
+                                                    x-a11y-switch="globalSettings.server.preserve_mid_system_cache"
+                                                    :aria-label="window.t('settings.advanced.preserve_mid_system_cache')"
                                                     @click="globalSettings.server.preserve_mid_system_cache = !globalSettings.server.preserve_mid_system_cache"
                                                     :class="globalSettings.server.preserve_mid_system_cache ? 'bg-black' : 'bg-neutral-200'"
                                                     class="relative w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
@@ -923,10 +958,10 @@
                                     <div class="divide-y divide-neutral-100">
                                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                             <div>
-                                                <label class="text-sm text-neutral-700">{{ t('settings.advanced.initial_cache_blocks') }}</label>
+                                                <label for="settings-advanced-initial-cache-blocks" class="text-sm text-neutral-700">{{ t('settings.advanced.initial_cache_blocks') }}</label>
                                                 <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.advanced.initial_cache_blocks_hint') }}</p>
                                             </div>
-                                            <input type="number" x-model.number="globalSettings.cache.initial_cache_blocks"
+                                            <input id="settings-advanced-initial-cache-blocks" type="number" x-model.number="globalSettings.cache.initial_cache_blocks"
                                                    min="1"
                                                    class="w-full sm:w-48 px-3 py-2 text-sm text-right border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all">
                                         </div>
@@ -935,7 +970,10 @@
                                                 <label class="text-sm text-neutral-700">{{ t('settings.advanced.hot_cache_write_through') }}</label>
                                                 <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.advanced.hot_cache_write_through_hint') }}</p>
                                             </div>
-                                            <button type="button" @click="globalSettings.cache.hot_cache_write_through = !globalSettings.cache.hot_cache_write_through"
+                                            <button type="button"
+                                                    x-a11y-switch="globalSettings.cache.hot_cache_write_through"
+                                                    :aria-label="window.t('settings.advanced.hot_cache_write_through')"
+                                                    @click="globalSettings.cache.hot_cache_write_through = !globalSettings.cache.hot_cache_write_through"
                                                     :class="globalSettings.cache.hot_cache_write_through ? 'bg-black' : 'bg-neutral-200'"
                                                     class="relative w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
                                                 <span :class="globalSettings.cache.hot_cache_write_through ? 'translate-x-5' : 'translate-x-0'"
@@ -947,7 +985,10 @@
                                                 <label class="text-sm text-neutral-700">{{ t('settings.advanced.ane_compile_cache') }}</label>
                                                 <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.advanced.ane_compile_cache_hint') }}</p>
                                             </div>
-                                            <button type="button" @click="globalSettings.cache.ane_compile_cache = !globalSettings.cache.ane_compile_cache"
+                                            <button type="button"
+                                                    x-a11y-switch="globalSettings.cache.ane_compile_cache"
+                                                    :aria-label="window.t('settings.advanced.ane_compile_cache')"
+                                                    @click="globalSettings.cache.ane_compile_cache = !globalSettings.cache.ane_compile_cache"
                                                     :class="globalSettings.cache.ane_compile_cache ? 'bg-black' : 'bg-neutral-200'"
                                                     class="relative w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
                                                 <span :class="globalSettings.cache.ane_compile_cache ? 'translate-x-5' : 'translate-x-0'"
@@ -967,10 +1008,10 @@
                                     <div class="divide-y divide-neutral-100">
                                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                             <div class="flex-1">
-                                                <label class="text-sm text-neutral-700">{{ t('settings.advanced.gdn_snapshot_storage') }}</label>
+                                                <label for="settings-advanced-gdn-snapshot-storage" class="text-sm text-neutral-700">{{ t('settings.advanced.gdn_snapshot_storage') }}</label>
                                                 <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.advanced.gdn_snapshot_storage_hint') }}</p>
                                             </div>
-                                            <select x-model="globalSettings.cache.gdn_snapshot_storage"
+                                            <select id="settings-advanced-gdn-snapshot-storage" x-model="globalSettings.cache.gdn_snapshot_storage"
                                                     class="w-full sm:w-64 px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all">
                                                 <option value="auto">{{ t('settings.advanced.gdn_snapshot_storage_auto') }}</option>
                                                 <option value="ssd_sidecar">{{ t('settings.advanced.gdn_snapshot_storage_ssd') }}</option>
@@ -990,7 +1031,7 @@
                                         </div>
                                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                             <div class="flex-1">
-                                                <label class="text-sm text-neutral-700">{{ t('settings.advanced.gdn_sidecar_state_precision') }}</label>
+                                                <label for="settings-cache-gdn-sidecar-precision" class="text-sm text-neutral-700">{{ t('settings.advanced.gdn_sidecar_state_precision') }}</label>
                                                 <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.advanced.gdn_sidecar_state_precision_hint') }}</p>
                                                 <p x-show="globalSettings.cache.gdn_sidecar_precision !== 'fp32'"
                                                    x-cloak
@@ -999,7 +1040,7 @@
                                                     <span>{{ t('settings.advanced.gdn_sidecar_state_precision_warning') }}</span>
                                                 </p>
                                             </div>
-                                            <select x-model="globalSettings.cache.gdn_sidecar_precision"
+                                            <select id="settings-cache-gdn-sidecar-precision" x-model="globalSettings.cache.gdn_sidecar_precision"
                                                     :disabled="globalSettings.cache.gdn_snapshot_storage === 'embedded' || globalSettings.cache.hot_cache_only || !globalSettings.cache.enabled"
                                                     class="w-full sm:w-64 px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                                                 <option value="fp32">{{ t('settings.advanced.gdn_sidecar_state_precision_fp32') }}</option>
@@ -1041,10 +1082,10 @@
                                     <div class="divide-y divide-neutral-100">
                                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-4">
                                             <div class="flex-1">
-                                                <label class="text-sm text-neutral-700">{{ t('settings.advanced.sse_keepalive_mode') }}</label>
+                                                <label for="settings-advanced-sse-keepalive-mode" class="text-sm text-neutral-700">{{ t('settings.advanced.sse_keepalive_mode') }}</label>
                                                 <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.advanced.sse_keepalive_mode_hint') }}</p>
                                             </div>
-                                            <select x-model="globalSettings.server.sse_keepalive_mode"
+                                            <select id="settings-advanced-sse-keepalive-mode" x-model="globalSettings.server.sse_keepalive_mode"
                                                     class="w-full sm:w-64 px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all">
                                                 <option value="chunk">{{ t('settings.advanced.sse_keepalive_mode_chunk') }}</option>
                                                 <option value="comment">{{ t('settings.advanced.sse_keepalive_mode_comment') }}</option>
@@ -1150,7 +1191,7 @@
                             <div class="flex items-center justify-between px-6 py-4 bg-neutral-100 border-b border-neutral-200">
                                 <div class="flex items-center gap-3">
                                     <i data-lucide="file-text" class="w-4 h-4 text-neutral-500"></i>
-                                    <span class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.integrations.markitdown.section_label') }}</span>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.integrations.markitdown.section_label') }}</h4>
                                 </div>
                                 <span class="px-2 py-0.5 text-[10px] font-medium rounded bg-neutral-200 text-neutral-600 border border-neutral-300">{{ t('settings.integrations.markitdown.formats_badge') }}</span>
                             </div>
@@ -1161,6 +1202,8 @@
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.integrations.markitdown.enabled_hint') }}</p>
                                     </div>
                                     <button type="button"
+                                            x-a11y-switch="globalSettings.integrations.markitdown_enabled"
+                                            :aria-label="window.t('settings.integrations.markitdown.enabled')"
                                             @click="globalSettings.integrations.markitdown_enabled = !globalSettings.integrations.markitdown_enabled; saveIntegrationSettings().then(() => loadModels())"
                                             :class="globalSettings.integrations.markitdown_enabled ? 'bg-black' : 'bg-neutral-200'"
                                             class="relative w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
@@ -1174,6 +1217,8 @@
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.integrations.markitdown.expose_model_hint') }}</p>
                                     </div>
                                     <button type="button"
+                                            x-a11y-switch="globalSettings.integrations.markitdown_expose_model && globalSettings.integrations.markitdown_enabled"
+                                            :aria-label="window.t('settings.integrations.markitdown.expose_model')"
                                             @click="globalSettings.integrations.markitdown_expose_model = !globalSettings.integrations.markitdown_expose_model; saveIntegrationSettings().then(() => loadModels())"
                                             :disabled="!globalSettings.integrations.markitdown_enabled"
                                             :class="[
@@ -1187,11 +1232,11 @@
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.integrations.markitdown.max_file_size') }}</label>
+                                        <label for="settings-integrations-markitdown-max-file-size" class="text-sm text-neutral-700">{{ t('settings.integrations.markitdown.max_file_size') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.integrations.markitdown.max_file_size_hint') }}</p>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <input type="number"
+                                        <input id="settings-integrations-markitdown-max-file-size" type="number"
                                                min="1"
                                                x-model.number="globalSettings.integrations.markitdown_max_file_size_mb"
                                                @change="saveIntegrationSettings()"
@@ -1201,10 +1246,10 @@
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.integrations.markitdown.max_files') }}</label>
+                                        <label for="settings-integrations-markitdown-max-files" class="text-sm text-neutral-700">{{ t('settings.integrations.markitdown.max_files') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.integrations.markitdown.max_files_hint') }}</p>
                                     </div>
-                                    <input type="number"
+                                    <input id="settings-integrations-markitdown-max-files" type="number"
                                            min="1"
                                            x-model.number="globalSettings.integrations.markitdown_max_files_per_request"
                                            @change="saveIntegrationSettings()"
@@ -1212,7 +1257,7 @@
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.integrations.markitdown.pdf_processing_engine') }}</label>
+                                        <label for="settings-integrations-markitdown-pdf-engine" class="text-sm text-neutral-700">{{ t('settings.integrations.markitdown.pdf_processing_engine') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.integrations.markitdown.pdf_processing_engine_hint') }}</p>
                                         <p x-show="markitdownOcrModelMissing"
                                            class="text-xs text-amber-600 mt-1">
@@ -1223,7 +1268,7 @@
                                             {{ t('settings.integrations.markitdown.pdf_processing_markitdown_warning') }}
                                         </p>
                                     </div>
-                                    <select x-model="globalSettings.integrations.markitdown_pdf_processing_engine"
+                                    <select id="settings-integrations-markitdown-pdf-engine" x-model="globalSettings.integrations.markitdown_pdf_processing_engine"
                                             @change="saveIntegrationSettings()"
                                             class="w-full sm:w-64 px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all bg-white">
                                         <option value="markitdown">{{ t('settings.integrations.markitdown.section_label') }}</option>
@@ -1242,17 +1287,17 @@
                             <div class="flex items-center justify-between px-6 py-4 bg-neutral-100 border-b border-neutral-200">
                                 <div class="flex items-center gap-3">
                                     <i data-lucide="globe" class="w-4 h-4 text-neutral-500"></i>
-                                    <span class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.integrations.websearch.section_label') }}</span>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ t('settings.integrations.websearch.section_label') }}</h4>
                                 </div>
                                 <span class="px-2 py-0.5 text-[10px] font-medium rounded bg-neutral-200 text-neutral-600 border border-neutral-300">{{ t('settings.integrations.websearch.providers_badge') }}</span>
                             </div>
                             <div class="divide-y divide-neutral-100">
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.integrations.websearch.provider') }}</label>
+                                        <label for="settings-integrations-websearch-provider" class="text-sm text-neutral-700">{{ t('settings.integrations.websearch.provider') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.integrations.websearch.provider_hint') }}</p>
                                     </div>
-                                    <select x-model="globalSettings.integrations.web_search_provider"
+                                    <select id="settings-integrations-websearch-provider" x-model="globalSettings.integrations.web_search_provider"
                                             @change="saveIntegrationSettings()"
                                             class="w-full sm:w-64 px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all bg-white">
                                         <option value="ddgs">{{ t('settings.integrations.websearch.provider_ddgs_total') }}</option>
@@ -1283,10 +1328,10 @@
                                 <div x-show="globalSettings.integrations.web_search_provider === 'brave'"
                                      class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.integrations.websearch.brave_api_key') }}</label>
+                                        <label for="settings-integrations-websearch-brave-api-key" class="text-sm text-neutral-700">{{ t('settings.integrations.websearch.brave_api_key') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.integrations.websearch.brave_api_key_hint') }}</p>
                                     </div>
-                                    <input type="password"
+                                    <input id="settings-integrations-websearch-brave-api-key" type="password"
                                            x-model="globalSettings.integrations.web_search_brave_api_key"
                                            @change="saveIntegrationSettings()"
                                            autocomplete="off"
@@ -1306,10 +1351,10 @@
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.integrations.websearch.max_results') }}</label>
+                                        <label for="settings-integrations-websearch-max-results" class="text-sm text-neutral-700">{{ t('settings.integrations.websearch.max_results') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.integrations.websearch.max_results_hint') }}</p>
                                     </div>
-                                    <input type="number"
+                                    <input id="settings-integrations-websearch-max-results" type="number"
                                            min="1" max="10"
                                            x-model.number="globalSettings.integrations.web_search_max_results"
                                            @change="saveIntegrationSettings()"
@@ -1317,10 +1362,10 @@
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.integrations.websearch.content_mode') }}</label>
+                                        <label for="settings-integrations-websearch-content-mode" class="text-sm text-neutral-700">{{ t('settings.integrations.websearch.content_mode') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.integrations.websearch.content_mode_hint') }}</p>
                                     </div>
-                                    <select x-model="globalSettings.integrations.web_search_content_mode"
+                                    <select id="settings-integrations-websearch-content-mode" x-model="globalSettings.integrations.web_search_content_mode"
                                             @change="saveIntegrationSettings()"
                                             class="w-full sm:w-64 px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all bg-white">
                                         <option value="snippet">{{ t('settings.integrations.websearch.content_mode_snippet') }}</option>
@@ -1334,6 +1379,8 @@
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.integrations.websearch.content_truncate_hint') }}</p>
                                     </div>
                                     <button type="button"
+                                            x-a11y-switch="globalSettings.integrations.web_search_content_truncate"
+                                            :aria-label="window.t('settings.integrations.websearch.content_truncate')"
                                             @click="globalSettings.integrations.web_search_content_truncate = !globalSettings.integrations.web_search_content_truncate; saveIntegrationSettings()"
                                             :class="globalSettings.integrations.web_search_content_truncate ? 'bg-black' : 'bg-neutral-200'"
                                             class="relative w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
@@ -1344,11 +1391,11 @@
                                 <div x-show="globalSettings.integrations.web_search_content_mode === 'full' && globalSettings.integrations.web_search_content_truncate"
                                      class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-4">
                                     <div>
-                                        <label class="text-sm text-neutral-700">{{ t('settings.integrations.websearch.content_max_chars') }}</label>
+                                        <label for="settings-integrations-websearch-content-max-chars" class="text-sm text-neutral-700">{{ t('settings.integrations.websearch.content_max_chars') }}</label>
                                         <p class="text-xs text-neutral-400 mt-0.5">{{ t('settings.integrations.websearch.content_max_chars_hint') }}</p>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <input type="number"
+                                        <input id="settings-integrations-websearch-content-max-chars" type="number"
                                                min="1000" step="1000"
                                                x-model.number="globalSettings.integrations.web_search_content_max_chars"
                                                @change="saveIntegrationSettings()"
@@ -1406,6 +1453,7 @@
                                    :placeholder="window.t('settings.models.search_placeholder')"
                                    class="w-full pl-9 pr-9 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all bg-white">
                             <button x-show="modelSearch" @click="modelSearch = ''"
+                                    aria-label="{{ t('settings.models.table.clear_search') }}"
                                     class="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-all">
                                 <i data-lucide="x" class="w-3.5 h-3.5"></i>
                             </button>
@@ -1440,34 +1488,34 @@
                         <div class="overflow-x-auto">
                         <!-- Table Header -->
                         <div class="flex items-center gap-4 px-4 sm:px-6 py-3 bg-neutral-50 border-b border-neutral-200 text-xs font-bold uppercase tracking-wider text-neutral-500">
-                            <div class="flex-1 min-w-0 flex items-center gap-1 cursor-pointer hover:text-neutral-700 select-none" @click="toggleSort('id')">
+                            <button type="button" class="flex-1 min-w-0 flex items-center gap-1 cursor-pointer hover:text-neutral-700 select-none" @click="toggleSort('id')">
                                 {{ t('settings.models.table.model') }}
                                 <span x-show="sortBy === 'id'" x-text="sortOrder === 'asc' ? '▲' : '▼'" class="text-[10px]"></span>
-                            </div>
-                            <div class="hidden sm:flex w-20 text-center items-center justify-center gap-1 cursor-pointer hover:text-neutral-700 select-none" @click="toggleSort('type')">
+                            </button>
+                            <button type="button" class="hidden sm:flex w-20 text-center items-center justify-center gap-1 cursor-pointer hover:text-neutral-700 select-none" @click="toggleSort('type')">
                                 {{ t('settings.models.table.type') }}
                                 <span x-show="sortBy === 'type'" x-text="sortOrder === 'asc' ? '▲' : '▼'" class="text-[10px]"></span>
-                            </div>
-                            <div class="hidden sm:flex w-60 text-center items-center justify-center gap-1 cursor-pointer hover:text-neutral-700 select-none" @click="toggleSort('size')">
+                            </button>
+                            <button type="button" class="hidden sm:flex w-60 text-center items-center justify-center gap-1 cursor-pointer hover:text-neutral-700 select-none" @click="toggleSort('size')">
                                 {{ t('settings.models.table.size') }}
                                 <span x-show="sortBy === 'size'" x-text="sortOrder === 'asc' ? '▲' : '▼'" class="text-[10px]"></span>
-                            </div>
-                            <div class="w-20 text-center flex items-center justify-center gap-1 cursor-pointer hover:text-neutral-700 select-none" @click="toggleSort('loaded')">
+                            </button>
+                            <button type="button" class="w-20 text-center flex items-center justify-center gap-1 cursor-pointer hover:text-neutral-700 select-none" @click="toggleSort('loaded')">
                                 {{ t('settings.models.table.status') }}
                                 <span x-show="sortBy === 'loaded'" x-text="sortOrder === 'asc' ? '▲' : '▼'" class="text-[10px]"></span>
-                            </div>
-                            <div class="hidden sm:flex w-12 text-center items-center justify-center gap-1 cursor-pointer hover:text-neutral-700 select-none" @click="toggleSort('pinned')">
+                            </button>
+                            <button type="button" class="hidden sm:flex w-12 text-center items-center justify-center gap-1 cursor-pointer hover:text-neutral-700 select-none" @click="toggleSort('pinned')">
                                 {{ t('settings.models.table.pin') }}
                                 <span x-show="sortBy === 'pinned'" x-text="sortOrder === 'asc' ? '▲' : '▼'" class="text-[10px]"></span>
-                            </div>
-                            <div class="hidden sm:flex w-12 text-center items-center justify-center gap-1 cursor-pointer hover:text-neutral-700 select-none" @click="toggleSort('is_hidden')">
+                            </button>
+                            <button type="button" class="hidden sm:flex w-12 text-center items-center justify-center gap-1 cursor-pointer hover:text-neutral-700 select-none" @click="toggleSort('is_hidden')">
                                 {{ t('settings.models.table.visible') }}
                                 <span x-show="sortBy === 'is_hidden'" x-text="sortOrder === 'asc' ? '▲' : '▼'" class="text-[10px]"></span>
-                            </div>
-                            <div class="hidden sm:flex w-14 text-center items-center justify-center gap-1 cursor-pointer hover:text-neutral-700 select-none" @click="toggleSort('is_default')">
+                            </button>
+                            <button type="button" class="hidden sm:flex w-14 text-center items-center justify-center gap-1 cursor-pointer hover:text-neutral-700 select-none" @click="toggleSort('is_default')">
                                 {{ t('settings.models.table.default') }}
                                 <span x-show="sortBy === 'is_default'" x-text="sortOrder === 'asc' ? '▲' : '▼'" class="text-[10px]"></span>
-                            </div>
+                            </button>
                             <div class="w-10 text-center"></div>
                         </div>
 
@@ -1482,7 +1530,9 @@
                                         <!-- Model Name -->
                                         <div class="flex-1 min-w-0 flex items-center gap-3">
                                             <template x-if="!model.virtual">
-                                                <button
+                                                <button type="button"
+                                                    x-a11y-pressed="model.is_favorite"
+                                                    :aria-label="(model.is_favorite ? window.t('settings.models.table.favorite_on_tooltip') : window.t('settings.models.table.favorite_off_tooltip')) + ': ' + model.id"
                                                     @click="updateModelSetting(model.id, 'is_favorite', !model.is_favorite)"
                                                     @mouseenter="showTip($event.currentTarget, model.is_favorite ? window.t('settings.models.table.favorite_on_tooltip') : window.t('settings.models.table.favorite_off_tooltip'))"
                                                     @mouseleave="hideTip()"
@@ -1519,6 +1569,7 @@
                                                     class="p-1 rounded-md transition-all flex-shrink-0"
                                                     :class="copied ? 'text-green-500' : 'text-neutral-300 hover:text-neutral-600 hover:bg-neutral-100'"
                                                     :title="window.t('settings.models.table.copy_model_name_tooltip')"
+                                                    :aria-label="window.t('settings.models.table.copy_model_name_tooltip')">
                                                 <svg x-show="!copied" class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                                                 <svg x-show="copied" x-cloak class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                                             </button>
@@ -1538,7 +1589,8 @@
                                         <!-- Status -->
                                         <div class="w-20 text-center flex-shrink-0"
                                              x-data="{ hover: false }"
-                                             @mouseenter="hover = true" @mouseleave="hover = false">
+                                             @mouseenter="hover = true" @mouseleave="hover = false"
+                                             @focusin="hover = true" @focusout="hover = false">
                                             <!-- Loading state -->
                                             <template x-if="model.is_loading">
                                                 <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full gap-1 bg-amber-100 text-amber-700">
@@ -1552,6 +1604,7 @@
                                             <!-- Loaded state -->
                                             <template x-if="!model.virtual && !model.is_loading && model.loaded">
                                                 <button @click="unloadModel(model.id)"
+                                                        :aria-label="window.t('settings.models.table.status_loaded') + ', ' + window.t('settings.models.table.status_unload')"
                                                         :class="hover
                                                             ? 'bg-red-100 text-red-700 cursor-pointer'
                                                             : 'bg-neutral-900 text-white'"
@@ -1569,6 +1622,7 @@
                                             <!-- Ready state -->
                                             <template x-if="!model.virtual && !model.is_loading && !model.loaded">
                                                 <button @click="loadModel(model.id)"
+                                                        :aria-label="window.t('settings.models.table.status_ready') + ', ' + window.t('settings.models.table.status_load')"
                                                         :class="hover
                                                             ? 'bg-green-100 text-green-700 border-green-200 cursor-pointer'
                                                             : 'bg-white text-neutral-500 border-neutral-200'"
@@ -1582,7 +1636,9 @@
                                         <!-- Pin Toggle -->
                                         <div class="hidden sm:flex w-12 justify-center flex-shrink-0">
                                             <template x-if="!model.virtual">
-                                                <button
+                                                <button type="button"
+                                                    x-a11y-switch="model.pinned"
+                                                    :aria-label="window.t('settings.models.table.pin') + ': ' + model.id"
                                                     @click="updateModelSetting(model.id, 'is_pinned', !model.pinned)"
                                                     @mouseenter="showTip($event.currentTarget, model.pinned ? window.t('settings.models.table.pin_on_tooltip') : window.t('settings.models.table.pin_off_tooltip'))"
                                                     @mouseleave="hideTip()"
@@ -1605,7 +1661,9 @@
                                         <!-- Visibility Toggle (on = visible in /v1/models) -->
                                         <div class="hidden sm:flex w-12 justify-center flex-shrink-0">
                                             <template x-if="!model.virtual">
-                                                <button
+                                                <button type="button"
+                                                    x-a11y-switch="!model.is_hidden"
+                                                    :aria-label="window.t('settings.models.table.visible') + ': ' + model.id"
                                                     @click="updateModelSetting(model.id, 'is_hidden', !model.is_hidden)"
                                                     @mouseenter="showTip($event.currentTarget, !model.is_hidden ? window.t('settings.models.table.visible_on_tooltip') : window.t('settings.models.table.visible_off_tooltip'))"
                                                     @mouseleave="hideTip()"
@@ -1628,7 +1686,9 @@
                                         <!-- Default Radio (only for LLM models) -->
                                         <div class="hidden sm:flex w-14 justify-center flex-shrink-0">
                                             <template x-if="!model.virtual && (model.model_type === 'llm' || model.model_type === 'vlm' || !model.model_type)">
-                                                <button
+                                                <button type="button"
+                                                    x-a11y-pressed="model.is_default"
+                                                    :aria-label="(model.is_default ? window.t('settings.models.table.default_on_tooltip') : window.t('settings.models.table.default_off_tooltip')) + ': ' + model.id"
                                                     @click="updateModelSetting(model.id, 'is_default', true)"
                                                     @mouseenter="showTip($event.currentTarget, model.is_default ? window.t('settings.models.table.default_on_tooltip') : window.t('settings.models.table.default_off_tooltip'))"
                                                     @mouseleave="hideTip()"

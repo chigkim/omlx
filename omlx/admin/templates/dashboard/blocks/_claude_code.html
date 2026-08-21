@@ -10,10 +10,12 @@
         <div class="flex flex-col sm:flex-row gap-4 items-start">
             <!-- Left: Mode Toggle -->
             <div class="w-full sm:w-48 sm:flex-shrink-0">
-                <label class="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2">{{ t('status.claude_code.mode') }}</label>
+                <label for="status-claude-code-mode" class="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2">{{ t('status.claude_code.mode') }}</label>
                 <div class="flex items-center gap-3">
-                    <button type="button"
+                    <button id="status-claude-code-mode" type="button"
                             @click="globalSettings.claude_code.mode = (globalSettings.claude_code.mode === 'cloud' ? 'local' : 'cloud'); saveClaudeCodeSettings()"
+                            aria-label="{{ t('status.claude_code.mode') }}"
+                            x-a11y-switch="globalSettings.claude_code.mode === 'local'"
                             :class="globalSettings.claude_code.mode === 'local' ? 'bg-neutral-900' : 'bg-neutral-200'"
                             class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200">
                         <span :class="globalSettings.claude_code.mode === 'local' ? 'translate-x-5' : 'translate-x-0'"
@@ -31,6 +33,7 @@
                          x-text="claudeCodeCommand"></pre>
                     <button x-data="{ copied: false }"
                             @click="copyToClipboard(claudeCodeCommand); copied = true; setTimeout(() => copied = false, 2000)"
+                            :aria-label="window.t('status.claude_code.copy_command_tooltip')"
                             class="absolute top-2.5 right-2.5 p-1.5 rounded-md transition-all opacity-0 group-hover:opacity-100"
                             :class="copied ? 'text-green-500 opacity-100' : 'bg-white/80 text-neutral-400 hover:text-neutral-700'"
                             :title="window.t('status.claude_code.copy_command_tooltip')">
@@ -52,8 +55,8 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <!-- Opus tier -->
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">{{ t('status.claude_code.opus_tier') }}</label>
-                    <select x-model="globalSettings.claude_code.opus_model"
+                    <label for="status-claude-code-opus-tier" class="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">{{ t('status.claude_code.opus_tier') }}</label>
+                    <select id="status-claude-code-opus-tier" x-model="globalSettings.claude_code.opus_model"
                             @change="globalSettings.claude_code.opus_model = globalSettings.claude_code.opus_model || null; saveClaudeCodeSettings()"
                             class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg bg-white focus:ring-2 focus:ring-neutral-900 focus:border-neutral-900 transition-all">
                         <option value="">{{ t('status.claude_code.select_model') }}</option>
@@ -70,8 +73,8 @@
                 </div>
                 <!-- Sonnet tier -->
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">{{ t('status.claude_code.sonnet_tier') }}</label>
-                    <select x-model="globalSettings.claude_code.sonnet_model"
+                    <label for="status-claude-code-sonnet-tier" class="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">{{ t('status.claude_code.sonnet_tier') }}</label>
+                    <select id="status-claude-code-sonnet-tier" x-model="globalSettings.claude_code.sonnet_model"
                             @change="globalSettings.claude_code.sonnet_model = globalSettings.claude_code.sonnet_model || null; saveClaudeCodeSettings()"
                             class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg bg-white focus:ring-2 focus:ring-neutral-900 focus:border-neutral-900 transition-all">
                         <option value="">{{ t('status.claude_code.select_model') }}</option>
@@ -88,8 +91,8 @@
                 </div>
                 <!-- Haiku tier -->
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">{{ t('status.claude_code.haiku_tier') }}</label>
-                    <select x-model="globalSettings.claude_code.haiku_model"
+                    <label for="status-claude-code-haiku-tier" class="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">{{ t('status.claude_code.haiku_tier') }}</label>
+                    <select id="status-claude-code-haiku-tier" x-model="globalSettings.claude_code.haiku_model"
                             @change="globalSettings.claude_code.haiku_model = globalSettings.claude_code.haiku_model || null; saveClaudeCodeSettings()"
                             class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg bg-white focus:ring-2 focus:ring-neutral-900 focus:border-neutral-900 transition-all">
                         <option value="">{{ t('status.claude_code.select_model') }}</option>

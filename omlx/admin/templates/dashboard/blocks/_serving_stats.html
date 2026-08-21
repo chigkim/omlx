@@ -8,11 +8,13 @@
         <!-- Scope toggle -->
         <div class="flex rounded-lg border border-neutral-200 overflow-hidden">
             <button @click="statsScope = 'session'; showClearStatsConfirm = false; showClearAlltimeConfirm = false"
+                    x-a11y-pressed="statsScope === 'session'"
                     :class="statsScope === 'session' ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-500 hover:bg-neutral-50'"
                     class="px-3 py-1.5 text-xs font-medium transition-all">
                 {{ t('status.scope_session') }}
             </button>
             <button @click="statsScope = 'alltime'; showClearStatsConfirm = false; showClearAlltimeConfirm = false"
+                    x-a11y-pressed="statsScope === 'alltime'"
                     :class="statsScope === 'alltime' ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-500 hover:bg-neutral-50'"
                     class="px-3 py-1.5 text-xs font-medium transition-all border-l border-neutral-200">
                 {{ t('status.scope_alltime') }}

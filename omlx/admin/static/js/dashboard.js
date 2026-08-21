@@ -176,11 +176,8 @@
 
             // Cache slider (0-100%)
             cachePercent: 10,
-            editingCache: false,
             // Hot cache slider (0-50%)
             hotCachePercent: 0,
-            // Editing state for direct GB input
-            editingHotCache: false,
 
             // Idle timeout string value for select binding (null ↔ '')
             idleTimeoutValue: '',
@@ -4207,12 +4204,20 @@
 
             copyToClipboard(text) {
                 if (navigator.clipboard && window.isSecureContext) {
-                    navigator.clipboard.writeText(text).catch(() => {
+                    navigator.clipboard.writeText(text).then(() => {
+                        this._announceCopied();
+                    }).catch(() => {
                         this._copyFallback(text);
                     });
                 } else {
                     this._copyFallback(text);
                 }
+            },
+
+            // The copy buttons confirm by turning green for two seconds, which
+            // says nothing to a screen reader. Announce it instead.
+            _announceCopied() {
+                if (window.announce) window.announce(window.t('js.success.copied'));
             },
 
             _copyFallback(text) {
@@ -4222,12 +4227,14 @@
                 textarea.style.opacity = '0';
                 document.body.appendChild(textarea);
                 textarea.select();
+                let copied = false;
                 try {
-                    document.execCommand('copy');
+                    copied = document.execCommand('copy');
                 } catch (err) {
                     console.error('Failed to copy:', err);
                 }
                 document.body.removeChild(textarea);
+                if (copied) this._announceCopied();
             },
 
             async logout() {

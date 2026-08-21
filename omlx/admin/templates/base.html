@@ -25,6 +25,36 @@
 
     <!-- Alpine.js -->
     <script defer src="/admin/static/js/alpine.min.js"></script>
+    <script>
+        // Give custom visual switches consistent accessibility semantics.
+        // Usage: x-a11y-switch="booleanExpression" plus an accessible name.
+        document.addEventListener('alpine:init', function() {
+            Alpine.directive('a11y-switch', function(el, directive, utilities) {
+                var evaluateChecked = utilities.evaluateLater(directive.expression);
+
+                el.setAttribute('role', 'switch');
+                var knob = el.querySelector(':scope > span');
+                if (knob) knob.setAttribute('aria-hidden', 'true');
+
+                utilities.effect(function() {
+                    evaluateChecked(function(checked) {
+                        el.setAttribute('aria-checked', checked ? 'true' : 'false');
+                    });
+                });
+            });
+
+            // Expose the state of buttons used as selectable options.
+            Alpine.directive('a11y-pressed', function(el, directive, utilities) {
+                var evaluatePressed = utilities.evaluateLater(directive.expression);
+
+                utilities.effect(function() {
+                    evaluatePressed(function(pressed) {
+                        el.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+                    });
+                });
+            });
+        });
+    </script>
 
     <!-- Lucide Icons -->
     <script src="/admin/static/js/lucide.min.js"></script>
@@ -56,6 +86,15 @@
         // i18n locale strings
         window._t = {{ locale_json | safe }};
         window.t = function(key) { return window._t[key] !== undefined ? window._t[key] : key; };
+
+        // Speaks a short message through the polite live region. Re-setting the
+        // same text would not be a mutation, so clear it first to force one.
+        window.announce = function(message) {
+            const region = document.getElementById('a11y-announcer');
+            if (!region) return;
+            region.textContent = '';
+            window.setTimeout(function() { region.textContent = message; }, 50);
+        };
     </script>
 
     <style>
@@ -136,6 +175,14 @@
 
         dialog.dashboard-dialog::backdrop {
             background: transparent;
+
+        /* Controls that only fade in on hover (copy buttons in list rows) are
+           invisible to a keyboard user who tabs onto them. Bring them back on
+           focus. The prebuilt Tailwind CSS has no focus-visible:opacity-100
+           utility, so the reveal lives here instead. */
+        .opacity-0:focus-visible,
+        .opacity-0:focus-within {
+            opacity: 1 !important;
         }
 
         /* Respect "Reduce Motion" (accessibility): collapse CSS transitions
@@ -241,6 +288,9 @@
 
 </head>
 <body class="font-sans bg-white text-neutral-900 antialiased selection:bg-neutral-900 selection:text-white">
+    <!-- Announces transient confirmations to screen readers. Off-screen, so
+         it never affects layout; polite, so it never interrupts. -->
+    <div id="a11y-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
     {% block content %}{% endblock %}
 
     <script>
