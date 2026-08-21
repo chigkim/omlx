@@ -65,6 +65,7 @@
                                     <template x-for="opt in dashWidthOptions" :key="opt.id">
                                         <button type="button"
                                             @click="setDashboardWidth(opt.id)"
+                                            x-a11y-pressed="dashDraft.width === opt.id"
                                             :class="dashDraft.width === opt.id ? 'segmented__item--active' : ''"
                                             class="segmented__item"
                                             x-text="opt.label"></button>
@@ -150,7 +151,7 @@
                                                                 <span class="dash-tile-grip" draggable="true"
                                                                     @dragstart="dashTileDragStart(id, $event)"
                                                                     :title="window.t('status.layout.tile_drag')"
-                                                                    :aria-label="window.t('status.layout.tile_drag')">
+                                                                    aria-hidden="true">
                                                                     <i data-lucide="grip-vertical" class="w-3.5 h-3.5"></i>
                                                                 </span>
                                                                 <label class="flex items-center gap-2 flex-1 min-w-0 text-xs font-medium text-neutral-700"

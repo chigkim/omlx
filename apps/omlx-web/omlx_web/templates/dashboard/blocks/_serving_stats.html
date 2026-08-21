@@ -8,11 +8,13 @@
         <!-- Scope toggle -->
         <div class="segmented segmented--sm">
             <button @click="statsScope = 'session'; showClearStatsConfirm = false; showClearAlltimeConfirm = false"
+                    x-a11y-pressed="statsScope === 'session'"
                     :class="statsScope === 'session' ? 'segmented__item--active' : ''"
                     class="segmented__item">
                 {{ t('status.scope_session') }}
             </button>
             <button @click="statsScope = 'alltime'; showClearStatsConfirm = false; showClearAlltimeConfirm = false"
+                    x-a11y-pressed="statsScope === 'alltime'"
                     :class="statsScope === 'alltime' ? 'segmented__item--active' : ''"
                     class="segmented__item">
                 {{ t('status.scope_alltime') }}
