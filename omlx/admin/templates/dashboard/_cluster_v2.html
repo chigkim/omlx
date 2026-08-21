@@ -391,8 +391,7 @@
                                         <svg class="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                                         {{ t('cluster.v2.pairing.waiting') }}
                                     </span>
-                                    <span aria-label="{{ t('cluster.v2.pairing.code_expires_in') }}"
-                                          data-cluster-v2-join-countdown
+                                    <span data-cluster-v2-join-countdown
                                           x-text="window.t('cluster.v2.pairing.expires_in').replace('{time}', joinCountdownLabel())"></span>
                                 </div>
                             </div>
@@ -628,6 +627,7 @@
                              x-text="modelsError || window.t('cluster.v2.plan.no_models')"></div>
                         <template x-for="model in filteredModels()" :key="model.model_path">
                             <button type="button" @click="selectModel(model)"
+                                    x-a11y-pressed="selectedModelPath === model.model_path"
                                     class="w-full text-left px-4 py-2.5 hover:bg-neutral-50 flex items-center justify-between gap-3"
                                     :class="selectedModelPath === model.model_path ? 'bg-neutral-50' : ''">
                                 <span class="min-w-0">
@@ -654,6 +654,7 @@
                         <template x-for="option in strategyOptions()" :key="option.key">
                             <button type="button"
                                     @click="setPlanStrategy(option.key)"
+                                    x-a11y-pressed="planStrategy === option.key"
                                     :disabled="option.disabled"
                                     :title="option.disabledReason"
                                     :data-selected="planStrategy === option.key ? 'true' : 'false'"
@@ -692,6 +693,7 @@
                         <template x-for="option in executionProfileOptions()" :key="option.key">
                             <button type="button"
                                     @click="setExecutionProfile(option.key)"
+                                    x-a11y-pressed="executionProfile === option.key"
                                     :disabled="planLoading"
                                     :data-selected="executionProfile === option.key ? 'true' : 'false'"
                                     :data-cluster-v2-serving-profile-option="option.key"
@@ -793,12 +795,14 @@
                                 <div class="flex rounded-lg border border-neutral-200 overflow-hidden flex-shrink-0"
                                      data-cluster-v2-role-picker>
                                     <button type="button" @click="setNodeRole(device, 'workstation')"
+                                            x-a11y-pressed="nodeRole(device.node_id, !!device.is_self) === 'workstation'"
                                             :class="nodeRole(device.node_id, !!device.is_self) === 'workstation'
                                                 ? 'bg-neutral-900 text-white'
                                                 : 'text-neutral-600 hover:bg-neutral-50'"
                                             class="px-2.5 py-1 text-[10px] font-semibold transition-colors"
                                             data-cluster-v2-role-workstation>{{ t('cluster.v2.plan.role_workstation') }}</button>
                                     <button type="button" @click="setNodeRole(device, 'headless')"
+                                            x-a11y-pressed="nodeRole(device.node_id, !!device.is_self) === 'headless'"
                                             :class="nodeRole(device.node_id, !!device.is_self) === 'headless'
                                                 ? 'bg-neutral-900 text-white'
                                                 : 'text-neutral-600 hover:bg-neutral-50'"
@@ -1027,6 +1031,7 @@
                                 <template x-for="option in executionProfileOptions()" :key="'active-' + option.key">
                                     <button type="button"
                                             @click="previewExecutionProfile(option.key)"
+                                            x-a11y-pressed="executionReplan?.profile === option.key"
                                             :disabled="executionReplanBusy || deploymentExecution()?.profile === option.key"
                                             :data-selected="executionReplan?.profile === option.key ? 'true' : 'false'"
                                             :data-cluster-v2-active-profile="option.key"

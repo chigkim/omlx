@@ -23,8 +23,8 @@
                         <div class="px-6 py-5 space-y-5">
                             <!-- Model Selector -->
                             <div>
-                                <label class="block text-sm font-medium text-neutral-700 mb-2">{{ t('acc_bench.config.model') }}</label>
-                                <select x-model="accModelId"
+                                <label for="acc-bench-config-model" class="block text-sm font-medium text-neutral-700 mb-2">{{ t('acc_bench.config.model') }}</label>
+                                <select id="acc-bench-config-model" x-model="accModelId"
                                         @change="const sel = models.find(m => m.id === accModelId); if (sel) { const s = sel.settings || {}; accEnableThinking = s.enable_thinking != null ? s.enable_thinking : (sel.thinking_default || false); }"
                                         :disabled="accExternalEnabled"
                                         class="w-full max-w-md px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white disabled:opacity-50">
@@ -40,6 +40,8 @@
                                 <label class="block text-sm font-medium text-neutral-700 mb-2">{{ t('acc_bench.config.thinking') }}</label>
                                 <div class="flex items-center gap-3">
                                     <button type="button"
+                                            x-a11y-switch="accEnableThinking"
+                                            :aria-label="window.t('acc_bench.config.thinking')"
                                             @click="if (!accExternalEnabled) accEnableThinking = !accEnableThinking"
                                             :disabled="accExternalEnabled"
                                             :class="[accEnableThinking ? 'bg-black' : 'bg-neutral-200', accExternalEnabled ? 'opacity-40 cursor-not-allowed' : '']"
@@ -86,6 +88,8 @@
                                         <label class="block text-sm font-medium text-neutral-700 mb-2">{{ t('acc_bench.config.sampling') }}</label>
                                         <div class="flex items-center gap-3">
                                             <button type="button"
+                                                    x-a11y-switch="accSamplingProfile === 'model_settings'"
+                                                    :aria-label="window.t('acc_bench.config.sampling_model')"
                                                     @click="accSamplingProfile = accSamplingProfile === 'model_settings' ? 'deterministic' : 'model_settings'"
                                                     :class="accSamplingProfile === 'model_settings' ? 'bg-black' : 'bg-neutral-200'"
                                                     class="relative w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
@@ -117,8 +121,8 @@
                                                        class="w-full max-w-md px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-neutral-900 focus:border-transparent bg-white disabled:opacity-50">
                                             </div>
                                             <div>
-                                                <label class="block text-xs font-medium text-neutral-600 mb-1">{{ t('bench.config.external_api_key') }}</label>
-                                                <input type="password"
+                                                <label for="bench-config-external-api-key-2" class="block text-xs font-medium text-neutral-600 mb-1">{{ t('bench.config.external_api_key') }}</label>
+                                                <input id="bench-config-external-api-key-2" type="password"
                                                        autocomplete="off"
                                                        x-model="externalApiKey"
                                                        @change="saveExternalEndpoint()"
@@ -183,12 +187,22 @@
                                                             <svg x-show="accBenchmarks[b.key]" class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                                         </div>
                                                         <!-- Benchmark name -->
-                                                        <div class="text-lg font-bold mb-1" x-text="b.label"></div>
+                                                        <!-- The card toggles for the mouse; the name carries the checkbox so
+                                                             that the sample size selector stays outside its subtree. A
+                                                             role="checkbox" prunes its own children from the a11y tree. -->
+                                                        <div @click.stop="accBenchmarks[b.key] = !accBenchmarks[b.key]"
+                                                             @keydown.enter.prevent="accBenchmarks[b.key] = !accBenchmarks[b.key]"
+                                                             @keydown.space.prevent="accBenchmarks[b.key] = !accBenchmarks[b.key]"
+                                                             role="checkbox"
+                                                             tabindex="0"
+                                                             :aria-checked="accBenchmarks[b.key] ? 'true' : 'false'"
+                                                             class="text-lg font-bold mb-1" x-text="b.label"></div>
                                                         <!-- Description -->
                                                         <div class="text-[10px] mb-3 opacity-70" x-text="b.desc"></div>
                                                         <!-- Sample size selector -->
                                                         <select x-model.number="accSampleSizes[b.key]"
                                                                 x-init="$nextTick(() => $el.value = accSampleSizes[b.key])"
+                                                                :aria-label="b.label + ' ' + window.t('acc_bench.setup.sample_size_label')"
                                                                 @click.stop
                                                                 :disabled="!accBenchmarks[b.key]"
                                                                 class="w-full px-2 py-1 text-xs rounded-lg border transition-all tabular-nums"
@@ -255,6 +269,7 @@
                                     <span x-text="q.model_id"></span>
                                     <span class="text-neutral-400 text-xs" x-text="'(' + q.benchmarks.join(', ') + ')'"></span>
                                     <button @click="removeFromAccQueue(idx)"
+                                            aria-label="{{ t('acc_bench.queue.remove_tooltip') }}"
                                             class="ml-1 text-neutral-500 hover:text-red-500 transition-colors">
                                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                     </button>
